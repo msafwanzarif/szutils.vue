@@ -1,5 +1,5 @@
-import { reactive as y, computed as o } from "vue";
-import { Duration as a } from "luxon";
+import { reactive as y, computed as o } from "https://cdn.jsdelivr.net/npm/vue@3/dist/vue.esm-browser.js";
+import { Duration as a } from "https://cdn.jsdelivr.net/npm/luxon@3/build/es6/luxon.js";
 function M(e = { hours: 0, minutes: 0, seconds: 0 }) {
   const s = y({
     raw: a.fromObject(e)

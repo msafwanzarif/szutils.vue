@@ -1,5 +1,5 @@
-import { ComputedRef } from 'vue';
-import { Duration, DurationObjectUnits } from 'luxon';
+import { ComputedRef } from 'https://cdn.jsdelivr.net/npm/vue@3/dist/vue.esm-browser.js';
+import { Duration, DurationObjectUnits } from 'https://cdn.jsdelivr.net/npm/luxon@3/build/es6/luxon.js';
 
 export interface UseDuration {
     state: {
