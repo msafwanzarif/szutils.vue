@@ -10,7 +10,7 @@ export default defineConfig(({ command }) => ({
     ? {}
     : {
         alias: {
-          'szutils-vue': resolve(__dirname, '../../src/index.ts'),
+          'szutils.vue': resolve(__dirname, '../../src/index.ts'),
         },
       },
   build: {
