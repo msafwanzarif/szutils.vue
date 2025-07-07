@@ -6,9 +6,9 @@
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/szutils.vue.es.js",
-      "require": "./dist/szutils.vue.umd.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/szutils.vue.umd.js"
     }
   },
   "files": [
