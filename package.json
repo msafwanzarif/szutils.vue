@@ -1,16 +1,17 @@
 {
   "name": "szutils.vue",
-  "version": "1.0.2",
-  "type": "module",
+  "version": "0.0.1",
   "main": "dist/szutils.vue.umd.js",
   "module": "dist/szutils.vue.es.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "import": "./dist/szutils.vue.es.js",
-      "require": "./dist/szutils.vue.umd.js"
+      "require": "./dist/szutils.vue.umd.js",
+      "types": "./dist/index.d.ts"
     }
   },
+  "files": ["dist"],
   "scripts": {
     "build": "vite build"
   },
