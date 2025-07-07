@@ -1,6 +1,6 @@
 {
   "name": "szutils.vue",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "dist/szutils.vue.umd.js",
   "module": "dist/szutils.vue.es.js",
   "types": "dist/index.d.ts",
@@ -11,7 +11,9 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "vite build"
   },
