@@ -1,0 +1,28 @@
+{
+  "name": "szutils.vue",
+  "version": "1.0.2",
+  "type": "module",
+  "main": "dist/szutils.vue.umd.js",
+  "module": "dist/szutils.vue.es.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/szutils.vue.es.js",
+      "require": "./dist/szutils.vue.umd.js"
+    }
+  },
+  "scripts": {
+    "build": "vite build"
+  },
+  "dependencies": {
+    "luxon": "^3.4.4"
+  },
+  "peerDependencies": {
+    "vue": "^3.0.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0",
+    "vite-plugin-dts": "^3.7.0",
+    "typescript": "^5.3.0"
+  }
+}
