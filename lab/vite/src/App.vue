@@ -1,14 +1,51 @@
-<script setup lang="ts">
-import { useDuration } from 'szutils.vue';
+<template>
+  <div>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light px-5">
+      <a class="navbar-brand" href="#">MyApp</a>
+      <div class="dropdown">
+        <ul class="navbar-nav mr-auto">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Functions
+            </a>
+            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+              <a v-for="(label, key) in pageMap" class="dropdown-item" href="#" @click.prevent="setPage(key)">{{ label }}</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </nav>
 
-const duration = useDuration({ minutes: 1 });
+    <div class="container mt-4">
+      <component v-if="currentComponent" :is="currentComponent" />
+      <div v-else >Welcome to Demo </div>
+    </div>
+  </div>
+</template>
 
-function add90Seconds() {
-  duration.add({ seconds: 90 });
+<script>
+import { defineAsyncComponent } from 'vue'
+
+export default {
+  name: 'App',
+  data() {
+    return {
+      currentComponent: null,
+      pageMap: {
+        useDuration: 'UseDuration'
+      }
+    }
+  },
+  mounted() {
+    //this.setPage('HomePage') // default page
+  },
+  methods: {
+    setPage(pageName) {
+      if(!pageName) return;
+      this.currentComponent = defineAsyncComponent(() =>
+        import(`../../../src/${pageName}/${pageName.substring(0,1).toUpperCase()}${pageName.substring(1)}Demo.vue`)
+      )
+    }
+  }
 }
 </script>
-
-<template>
-  <h2>Duration: {{ duration.hours }}:{{ duration.minutes }}:{{ duration.seconds }}</h2>
-  <button @click="add90Seconds">+90 Seconds</button>
-</template>
