@@ -1,8 +1,10 @@
-import { reactive, computed, ComputedRef } from 'vue';
+import { reactive, computed, ComputedRef, ref } from 'vue';
 import { Duration, DurationObjectUnits } from 'luxon';
 
 export interface UseDuration {
-  state: { raw: Duration };
+  luxon: {
+    raw: Duration;
+  };
   normalized: ComputedRef<Duration>;
   days: ComputedRef<number>;
   hours: ComputedRef<number>;
@@ -17,53 +19,89 @@ export interface UseDuration {
   add: (newDur: DurationObjectUnits) => void;
   subtract: (newDur: DurationObjectUnits) => void;
   reset: () => void;
+  run: () => void;
+  stop: () => void;
+  isRunning: ComputedRef<boolean>;
 }
 
 export function useDuration(initial: DurationObjectUnits = { hours: 0, minutes: 0, seconds: 0 }): UseDuration {
-  const state = reactive({
+  const luxon = reactive({
     raw: Duration.fromObject(initial)
   });
 
+  const state = reactive({
+    timer: null as number | null
+  });
+
   const normalized = computed(() =>
-    state.raw.shiftTo('days', 'hours', 'minutes', 'seconds', 'milliseconds')
+    luxon.raw.shiftTo('days', 'hours', 'minutes', 'seconds', 'milliseconds')
   );
 
   const days = computed(() => normalized.value.days);
   const hours = computed(() => normalized.value.hours);
   const minutes = computed(() => normalized.value.minutes);
   const seconds = computed(() => normalized.value.seconds);
-  const milliseconds = computed(() => normalized.value.milliseconds);
+  const milliseconds = computed(() => Math.floor(normalized.value.milliseconds));
 
-  const asSeconds = computed(() => state.raw.as('seconds'));
-  const asMinutes = computed(() => state.raw.as('minutes'));
-  const asHours = computed(() => state.raw.as('hours'));
+  const asSeconds = computed(() => luxon.raw.as('seconds'));
+  const asMinutes = computed(() => luxon.raw.as('minutes'));
+  const asHours = computed(() => luxon.raw.as('hours'));
 
   const formatted = computed(() =>
     normalized.value.toFormat("d'd' hh:mm:ss")
   );
 
   function set(newDur: DurationObjectUnits) {
-    state.raw = Duration.fromObject(newDur);
+    luxon.raw = Duration.fromObject(newDur);
   }
 
   function add(newDur: DurationObjectUnits) {
-    state.raw = state.raw.plus(newDur);
+    luxon.raw = luxon.raw.plus(newDur);
   }
 
   function subtract(newDur: DurationObjectUnits) {
-    state.raw = state.raw.minus(newDur);
+    luxon.raw = luxon.raw.minus(newDur);
   }
 
   function reset() {
-    state.raw = Duration.fromMillis(0);
+    luxon.raw = Duration.fromMillis(0);
+  }
+
+  // 🔄 Real-time update
+  let lastTime: number = 0;
+
+  const isRunning = computed(() => state.timer !== null);
+
+  function run() {
+    if (state.timer !== null) return; // already running
+
+    lastTime = performance.now();
+
+    state.timer = window.requestAnimationFrame(tick);
+  }
+
+  function tick(now: number) {
+    const delta = now - lastTime;
+    lastTime = now;
+    add({ milliseconds: delta });
+
+    state.timer = window.requestAnimationFrame(tick);
+  }
+
+  function stop() {
+    if (state.timer !== null) {
+      window.cancelAnimationFrame(state.timer);
+      state.timer = null;
+    }
   }
 
   return {
-    state,
+    luxon,
     normalized,
     days, hours, minutes, seconds, milliseconds,
     asSeconds, asMinutes, asHours,
     formatted,
-    set, add, subtract, reset
+    set, add, subtract, reset,
+    run, stop, isRunning
   };
 }
