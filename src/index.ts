@@ -1,2 +1,2 @@
-export { useDuration } from './useDuration/useDuration';
-export { useTimeTracker } from './useTimeTracker/useTimeTracker';
+export { useDuration } from './useDuration';
+export { useTimeTracker } from './useTimeTracker';

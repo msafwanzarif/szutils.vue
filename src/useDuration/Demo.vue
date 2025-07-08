@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed,ref,reactive } from 'vue';
-import { useDuration } from './useDuration';
+import { useDuration } from '.';
 
 const duration = reactive(useDuration({ minutes: 0 }));
 

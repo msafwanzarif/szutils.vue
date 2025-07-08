@@ -64,7 +64,7 @@
 <script setup lang="ts">
 import { DateTime } from 'luxon'
 import { computed } from 'vue'
-import { useTimeTracker } from './useTimeTracker'
+import { useTimeTracker } from '.'
 
 const {
   label,

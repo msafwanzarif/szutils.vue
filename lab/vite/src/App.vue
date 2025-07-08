@@ -44,7 +44,7 @@ export default {
     setPage(pageName) {
       if(!pageName) return;
       this.currentComponent = defineAsyncComponent(() =>
-        import(`../../../src/${pageName}/${pageName.substring(0,1).toUpperCase()}${pageName.substring(1)}Demo.vue`)
+        import(`../../../src/${pageName}/Demo.vue`)
       )
     }
   }
