@@ -32,7 +32,8 @@ export default {
     return {
       currentComponent: null,
       pageMap: {
-        useDuration: 'UseDuration'
+        useDuration: 'UseDuration',
+        useTimeTracker: 'UseTimeTracker',
       }
     }
   },
