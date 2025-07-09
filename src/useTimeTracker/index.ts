@@ -1,5 +1,6 @@
 import { reactive, computed, ComputedRef, Reactive, ref, Ref } from 'vue'
 import { DateTime, Duration, DurationObjectUnits } from 'luxon'
+import { toDateTime, generateId } from '../utility'
 
 export interface TrackerEntryRaw {
   id: string
@@ -176,14 +177,6 @@ export function useTimeTracker(initialId?: string, initialLabel?: string): UseTi
 
 
 // --- Helper ---
-function toDateTime(val: DateTime | string | number): DateTime {
-  return val instanceof DateTime
-    ? val
-    : typeof val === 'string'
-    ? DateTime.fromISO(val)
-    : DateTime.fromMillis(val)
-}
-
 function groupEntriesBy(
   entries: TrackerEntryComputed[],
   keyFn: (entry: TrackerEntryComputed) => string
@@ -238,17 +231,6 @@ function computeEntryStats(entries: TrackerEntryComputed[]): StatsSummary {
   const count = totals.length
 
   return { min, max, avg, total, count }
-}
-
-function generateId(): string {
-  return cryptoRandomId(7)
-}
-
-function cryptoRandomId(length: number): string {
-  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-  const array = new Uint8Array(length)
-  crypto.getRandomValues(array)
-  return Array.from(array, byte => chars[byte % chars.length]).join('')
 }
 
 
