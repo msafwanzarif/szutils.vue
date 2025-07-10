@@ -24,7 +24,7 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
+import { defineAsyncComponent,markRaw } from 'vue'
 
 export default {
   name: 'App',
@@ -34,6 +34,7 @@ export default {
       pageMap: {
         useDuration: 'UseDuration',
         useTimeTracker: 'UseTimeTracker',
+        useHabitTracker: 'UseHabitTracker',
       }
     }
   },
@@ -43,9 +44,9 @@ export default {
   methods: {
     setPage(pageName) {
       if(!pageName) return;
-      this.currentComponent = defineAsyncComponent(() =>
+      this.currentComponent = markRaw(defineAsyncComponent(() =>
         import(`../../../src/${pageName}/Demo.vue`)
-      )
+      ))
     }
   }
 }
