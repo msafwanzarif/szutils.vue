@@ -1,16 +1,16 @@
 # szutils.vue
 
-A modular Vue 3 utility collection designed for reactive productivity, time tracking, and habit building. Each utility is independently packaged, documented, and demo-ready.
+A modular Vue 3 composables collection designed for reactive productivity, time tracking, and habit building. Each utility is independently packaged, documented, and demo-ready.
 
 > 🔧 Built with Vite + TypeScript  
-> 📦 Published as ESM & UMD on npm and CDN  
-> 🎯 Lightweight, reactive, and composable
+> 📦 Published as ESM & UMD on npm and CDN 
+> 🎯 Lightweight and reactive Vue composables
 
 ---
 
 ## 📚 Utilities
 
-### 1. [`useDuration`](./src/useDuration/index.md)
+### 1. [`useDuration`](./src/useDuration)
 
 A reactive Luxon-based stopwatch/timer with real-time tracking support.  
 ✅ Features `run()`, `stop()`, `reset()`, and `elapsed` tracking with `isRunning` status.
@@ -19,7 +19,7 @@ A reactive Luxon-based stopwatch/timer with real-time tracking support.
 
 ---
 
-### 2. [`useTimeTracker`](./src/useTimeTracker/index.md)
+### 2. [`useTimeTracker`](./src/useTimeTracker)
 
 Track how much time has been spent doing something — session-by-session or continuously.  
 ✅ Entries, streaks, grouping by day/week/month, and total duration.
@@ -28,7 +28,7 @@ Track how much time has been spent doing something — session-by-session or con
 
 ---
 
-### 3. [`useHabitTracker`](./src/useHabitTracker/index.md)
+### 3. [`useHabitTracker`](./src/useHabitTracker)
 
 A powerful daily/weekly/monthly habit tracker with goal setting, breaks, off-days, and personal best tracking.  
 ✅ Tracks reps per day, calculates pass/success, off/break days, streaks, and supports localStorage persistence.
