@@ -35,7 +35,7 @@ export interface StatsSummary {
 export interface UseTimeTracker {
   trackerId: string
   label: Ref<string | undefined>
-  entries: Reactive<TrackerEntryRaw[]>
+  entries: Ref<TrackerEntryRaw[]>
 
   record: (start: DateTime | string | number, durationUnits: DurationObjectUnits, note?: string) => void
   recordDuration: (durationUnits: DurationObjectUnits, end?: DateTime | string | number, note?: string) => void
@@ -64,7 +64,7 @@ export interface UseTimeTracker {
 }
 
 export function useTimeTracker(initialId?: string, initialLabel?: string): UseTimeTracker {
-  const entries = reactive<TrackerEntryRaw[]>([])
+  const entries = ref<TrackerEntryRaw[]>([])
   const trackerId = initialId || generateId()
   const label = ref<string | undefined>(initialLabel)
 
@@ -72,24 +72,24 @@ export function useTimeTracker(initialId?: string, initialLabel?: string): UseTi
     const start = toDateTime(startInput)
     const duration = Duration.fromObject(durationUnits)
     const end = start.plus(duration)
-    entries.push({ id: generateId(), start, end, note })
+    entries.value.push({ id: generateId(), start, end, note })
   }
 
   function recordDuration(durationUnits: DurationObjectUnits, endInput?: DateTime | string | number, note?: string) {
     const end = endInput ? toDateTime(endInput) : DateTime.now()
     const duration = Duration.fromObject(durationUnits)
     const start = end.minus(duration)
-    entries.push({ id: generateId(), start, end, note })
+    entries.value.push({ id: generateId(), start, end, note })
   }
 
   function recordTime(startInput: DateTime | string | number, endInput: DateTime | string | number, note?: string) {
     const start = toDateTime(startInput)
     const end = toDateTime(endInput)
-    entries.push({ id: generateId(), start, end, note })
+    entries.value.push({ id: generateId(), start, end, note })
   }
 
   function updateEntry(id: string, updates: Partial<Pick<TrackerEntryRaw, 'start' | 'end' | 'note'>>) {
-    const entry = entries.find(e => e.id === id)
+    const entry = entries.value.find(e => e.id === id)
     if (!entry) return
     if (updates.start) entry.start = toDateTime(updates.start)
     if (updates.end) entry.end = toDateTime(updates.end)
@@ -97,12 +97,12 @@ export function useTimeTracker(initialId?: string, initialLabel?: string): UseTi
   }
 
   function deleteEntry(id: string) {
-    const index = entries.findIndex(e => e.id === id)
-    if (index !== -1) entries.splice(index, 1)
+    const index = entries.value.findIndex(e => e.id === id)
+    if (index !== -1) entries.value.splice(index, 1)
   }
 
   const computedEntries = computed<TrackerEntryComputed[]>(() => {
-    return entries.map(({ id, start, end, note }) => {
+    return entries.value.map(({ id, start, end, note }) => {
       const duration = end.diff(start)
       return {
         id,
