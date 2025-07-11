@@ -1,43 +1,46 @@
 <script setup lang="ts">
-import { computed,ref,reactive } from 'vue';
-import { useDuration } from '.';
+import { computed, ref, reactive } from 'vue';
+import { useDuration, useDurationFromSeconds } from '.';
 
-const duration = reactive(useDuration({ minutes: 0 }));
+const seconds = ref(0);
+const durationObject = computed(() => ({
+  days: 0,
+  hours: 0,
+  minutes: 0,
+  seconds: seconds.value,
+  milliseconds: 0
+}));
+const duration = reactive(useDurationFromSeconds(seconds));
+const collectionOfTimers = ref([reactive(useDurationFromSeconds(0))]);
 
-function start() {
-  duration.run();
-}
-
-function stop() {
-  duration.stop();
-}
-
-function reset() {
-  duration.reset();
+function addTimer() {
+  collectionOfTimers.value.push(reactive(useDurationFromSeconds(0)));
 }
 
 </script>
 
 <template>
-  <div class="demo-card">
-    <h2>⏱ useDuration Demo</h2>
-    
-    <ul>
-      <li><strong>Days:</strong> {{ duration.formatted }}</li>
-      <li><strong>Hours:</strong> {{ duration.hours }}</li>
-      <li><strong>Minutes:</strong> {{ duration.minutes }}</li>
-      <li><strong>Seconds:</strong> {{ duration.seconds }}</li>
-      <li><strong>MilliSeconds:</strong> {{ duration.milliseconds }}</li>
-      <li><strong>Is Running:</strong> {{ duration.isRunning }}</li>
-      <li><strong>To Object:</strong> {{ duration.luxon.toObject() }}</li>
-    </ul>
+  <div class="demo-card" v-for="timer,i in collectionOfTimers">
+      <h2>⏱ Timer {{ i + 1 }}</h2>
 
-    <div class="controls">
-      <button @click="start" :disabled="duration.isRunning">▶️ Start</button>
-      <button @click="stop" :disabled="!duration.isRunning">⏸️ Stop</button>
-      <button @click="reset">🔁 Reset</button>
-      <button @click="duration.add({seconds:10})">+10s</button>
-    </div>
+      <ul>
+        <li><strong>Days:</strong> {{ timer.formatted }}</li>
+        <li><strong>Hours:</strong> {{ timer.hours }}</li>
+        <li><strong>Minutes:</strong> {{ timer.minutes }}</li>
+        <li><strong>Seconds:</strong> {{ timer.seconds }}</li>
+        <li><strong>MilliSeconds:</strong> {{ timer.milliseconds }}</li>
+        <li><strong>As MilliSeconds:</strong> {{ timer.asMilliseconds }}</li>
+        <li><strong>Is Running:</strong> {{ timer.isRunning }}</li>
+        <li><strong>To Object:</strong> {{ timer.luxon.toFormat(`hh:mm:ss`) }}</li>
+      </ul>
+      <div class="controls">
+        <button @click="timer.run()" :disabled="timer.isRunning">▶️ Start</button>
+        <button @click="timer.stop()" :disabled="!timer.isRunning">⏸️ Stop</button>
+        <button @click="timer.reset()">🔁 Reset</button>
+        <button @click="timer.add({ seconds: 10 })">+10s</button>
+        <button @click="timer.subtract({ seconds: 10 })">-10s</button>
+        <button v-if="i == collectionOfTimers.length - 1" @click="addTimer">Add Timer</button>
+      </div>
   </div>
 </template>
 

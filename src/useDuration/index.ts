@@ -1,5 +1,7 @@
-import { computed, ComputedRef, ref,Ref } from 'vue';
+import { computed, ComputedRef, MaybeRefOrGetter, ref, Ref, toRefs, toValue } from 'vue';
 import { Duration, DurationObjectUnits } from 'luxon';
+import { useDurationDisplay } from '../useDurationDisplay';
+import { useTimer } from '../useTimer';
 
 export interface UseDuration {
   luxon: Ref<Duration>;
@@ -9,6 +11,7 @@ export interface UseDuration {
   minutes: ComputedRef<number>;
   seconds: ComputedRef<number>;
   milliseconds: ComputedRef<number>;
+  asMilliseconds: ComputedRef<number>;
   asSeconds: ComputedRef<number>;
   asMinutes: ComputedRef<number>;
   asHours: ComputedRef<number>;
@@ -22,82 +25,70 @@ export interface UseDuration {
   isRunning: ComputedRef<boolean>;
 }
 
-export function useDuration(initial: DurationObjectUnits = { hours: 0, minutes: 0, seconds: 0 }): UseDuration {
-  const luxon = ref( Duration.fromObject(initial) );
+export function useDuration(initial: MaybeRefOrGetter<DurationObjectUnits> = { hours: 0, minutes: 0, seconds: 0 }): UseDuration {
+  const additionalDurationObject = ref<DurationObjectUnits>({ hours: 0, minutes: 0, seconds: 0 });
+  const additionalDuration = computed(() => Duration.fromObject(additionalDurationObject.value));
+  const luxon = computed(() => Duration.fromObject(toValue(initial)).plus(additionalDuration.value));
 
-  const state = ref({
-    timer: null as number | null
-  });
-
-  const normalized = computed(() =>
-    luxon.value.shiftTo('days', 'hours', 'minutes', 'seconds', 'milliseconds')
-  );
-
-  const days = computed(() => normalized.value.days);
-  const hours = computed(() => normalized.value.hours);
-  const minutes = computed(() => normalized.value.minutes);
-  const seconds = computed(() => normalized.value.seconds);
-  const milliseconds = computed(() => Math.floor(normalized.value.milliseconds));
-
-  const asSeconds = computed(() => luxon.value.as('seconds'));
-  const asMinutes = computed(() => luxon.value.as('minutes'));
-  const asHours = computed(() => luxon.value.as('hours'));
-
-  const formatted = computed(() =>
-    normalized.value.toFormat("d'd' hh:mm:ss")
-  );
+  const { normalized, days, hours, minutes, seconds, milliseconds, asMilliseconds, asSeconds, asMinutes, asHours, formatted } = useDurationDisplay(luxon);
 
   function set(newDur: DurationObjectUnits) {
-    luxon.value = Duration.fromObject(newDur);
+    additionalDurationObject.value = Duration.fromObject({ seconds: 0 }).minus(toValue(initial)).plus(newDur).toObject();
   }
 
   function add(newDur: DurationObjectUnits) {
-    luxon.value = luxon.value.plus(newDur);
+    additionalDurationObject.value = additionalDuration.value.plus(newDur).toObject();
   }
 
   function subtract(newDur: DurationObjectUnits) {
-    luxon.value = luxon.value.minus(newDur);
+    additionalDurationObject.value = additionalDuration.value.minus(newDur).toObject();
   }
 
   function reset() {
-    luxon.value = Duration.fromMillis(0);
+    additionalDurationObject.value = Duration.fromObject({ seconds: 0 }).minus(toValue(initial)).toObject();
   }
 
-  // 🔄 Real-time update
-  let lastTime: number = 0;
-
-  const isRunning = computed(() => state.value.timer !== null);
+  // Timer logic via useTimer composable
+  const timer = useTimer({
+    onTick(deltaMs: number) {
+      add({ milliseconds: deltaMs });
+    }
+  });
 
   function run() {
-    if (state.value.timer !== null) return; // already running
-
-    lastTime = performance.now();
-
-    state.value.timer = window.requestAnimationFrame(tick);
-  }
-
-  function tick(now: number) {
-    const delta = now - lastTime;
-    lastTime = now;
-    add({ milliseconds: delta });
-
-    state.value.timer = window.requestAnimationFrame(tick);
+    timer.run();
   }
 
   function stop() {
-    if (state.value.timer !== null) {
-      window.cancelAnimationFrame(state.value.timer);
-      state.value.timer = null;
-    }
+    timer.stop();
   }
+
+  const isRunning = timer.isRunning;
 
   return {
     luxon,
     normalized,
     days, hours, minutes, seconds, milliseconds,
-    asSeconds, asMinutes, asHours,
+    asMilliseconds, asSeconds, asMinutes, asHours,
     formatted,
     set, add, subtract, reset,
     run, stop, isRunning
   };
 }
+
+export function useDurationFromMilliseconds(milliseconds: MaybeRefOrGetter<number>): UseDuration {
+  return useDuration({ milliseconds:toValue(milliseconds) });
+}
+export function useDurationFromSeconds(seconds: MaybeRefOrGetter<number>): UseDuration {
+  return useDuration({ seconds:toValue(seconds) });
+}
+export function useDurationFromMinutes(minutes: MaybeRefOrGetter<number>): UseDuration {
+  return useDuration({ minutes:toValue(minutes) });
+}
+export function useDurationFromHours(hours: MaybeRefOrGetter<number>): UseDuration {
+  return useDuration({ hours:toValue(hours) });
+}
+export function useDurationFromDays(days: MaybeRefOrGetter<number>): UseDuration {
+  return useDuration({ days:toValue(days) });
+}
+
