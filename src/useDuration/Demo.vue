@@ -29,7 +29,7 @@ function reset() {
       <li><strong>Seconds:</strong> {{ duration.seconds }}</li>
       <li><strong>MilliSeconds:</strong> {{ duration.milliseconds }}</li>
       <li><strong>Is Running:</strong> {{ duration.isRunning }}</li>
-      <li><strong>To Object:</strong> {{ duration.luxon.raw.toObject() }}</li>
+      <li><strong>To Object:</strong> {{ duration.luxon.toObject() }}</li>
     </ul>
 
     <div class="controls">

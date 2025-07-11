@@ -1,10 +1,8 @@
-import { reactive, computed, ComputedRef, ref } from 'vue';
+import { computed, ComputedRef, ref,Ref } from 'vue';
 import { Duration, DurationObjectUnits } from 'luxon';
 
 export interface UseDuration {
-  luxon: {
-    raw: Duration;
-  };
+  luxon: Ref<Duration>;
   normalized: ComputedRef<Duration>;
   days: ComputedRef<number>;
   hours: ComputedRef<number>;
@@ -25,16 +23,14 @@ export interface UseDuration {
 }
 
 export function useDuration(initial: DurationObjectUnits = { hours: 0, minutes: 0, seconds: 0 }): UseDuration {
-  const luxon = reactive({
-    raw: Duration.fromObject(initial)
-  });
+  const luxon = ref( Duration.fromObject(initial) );
 
-  const state = reactive({
+  const state = ref({
     timer: null as number | null
   });
 
   const normalized = computed(() =>
-    luxon.raw.shiftTo('days', 'hours', 'minutes', 'seconds', 'milliseconds')
+    luxon.value.shiftTo('days', 'hours', 'minutes', 'seconds', 'milliseconds')
   );
 
   const days = computed(() => normalized.value.days);
@@ -43,41 +39,41 @@ export function useDuration(initial: DurationObjectUnits = { hours: 0, minutes: 
   const seconds = computed(() => normalized.value.seconds);
   const milliseconds = computed(() => Math.floor(normalized.value.milliseconds));
 
-  const asSeconds = computed(() => luxon.raw.as('seconds'));
-  const asMinutes = computed(() => luxon.raw.as('minutes'));
-  const asHours = computed(() => luxon.raw.as('hours'));
+  const asSeconds = computed(() => luxon.value.as('seconds'));
+  const asMinutes = computed(() => luxon.value.as('minutes'));
+  const asHours = computed(() => luxon.value.as('hours'));
 
   const formatted = computed(() =>
     normalized.value.toFormat("d'd' hh:mm:ss")
   );
 
   function set(newDur: DurationObjectUnits) {
-    luxon.raw = Duration.fromObject(newDur);
+    luxon.value = Duration.fromObject(newDur);
   }
 
   function add(newDur: DurationObjectUnits) {
-    luxon.raw = luxon.raw.plus(newDur);
+    luxon.value = luxon.value.plus(newDur);
   }
 
   function subtract(newDur: DurationObjectUnits) {
-    luxon.raw = luxon.raw.minus(newDur);
+    luxon.value = luxon.value.minus(newDur);
   }
 
   function reset() {
-    luxon.raw = Duration.fromMillis(0);
+    luxon.value = Duration.fromMillis(0);
   }
 
   // 🔄 Real-time update
   let lastTime: number = 0;
 
-  const isRunning = computed(() => state.timer !== null);
+  const isRunning = computed(() => state.value.timer !== null);
 
   function run() {
-    if (state.timer !== null) return; // already running
+    if (state.value.timer !== null) return; // already running
 
     lastTime = performance.now();
 
-    state.timer = window.requestAnimationFrame(tick);
+    state.value.timer = window.requestAnimationFrame(tick);
   }
 
   function tick(now: number) {
@@ -85,13 +81,13 @@ export function useDuration(initial: DurationObjectUnits = { hours: 0, minutes: 
     lastTime = now;
     add({ milliseconds: delta });
 
-    state.timer = window.requestAnimationFrame(tick);
+    state.value.timer = window.requestAnimationFrame(tick);
   }
 
   function stop() {
-    if (state.timer !== null) {
-      window.cancelAnimationFrame(state.timer);
-      state.timer = null;
+    if (state.value.timer !== null) {
+      window.cancelAnimationFrame(state.value.timer);
+      state.value.timer = null;
     }
   }
 
