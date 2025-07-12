@@ -1,36 +1,20 @@
-import { computed, ComputedRef, MaybeRefOrGetter, ref, Ref, toRefs, toValue } from 'vue';
-import { Duration, DurationObjectUnits } from 'luxon';
+import { computed, MaybeRefOrGetter, ref,Ref, toValue } from 'vue';
+import { Duration, DurationObjectUnits, ToHumanDurationOptions } from 'luxon';
 import { useDurationDisplay } from '../useDurationDisplay';
-import { useTimer } from '../useTimer';
 
-export interface UseDuration {
-  luxon: Ref<Duration>;
-  normalized: ComputedRef<Duration>;
-  days: ComputedRef<number>;
-  hours: ComputedRef<number>;
-  minutes: ComputedRef<number>;
-  seconds: ComputedRef<number>;
-  milliseconds: ComputedRef<number>;
-  asMilliseconds: ComputedRef<number>;
-  asSeconds: ComputedRef<number>;
-  asMinutes: ComputedRef<number>;
-  asHours: ComputedRef<number>;
-  formatted: ComputedRef<string>;
-  set: (newDur: DurationObjectUnits) => void;
-  add: (newDur: DurationObjectUnits) => void;
-  subtract: (newDur: DurationObjectUnits) => void;
-  reset: () => void;
-  run: () => void;
-  stop: () => void;
-  isRunning: ComputedRef<boolean>;
-}
-
-export function useDuration(initial: MaybeRefOrGetter<DurationObjectUnits> = { hours: 0, minutes: 0, seconds: 0 }): UseDuration {
+export function useDuration(initial: MaybeRefOrGetter<DurationObjectUnits> = { hours: 0, minutes: 0, seconds: 0 },options:{useWeek: false} = {useWeek: false}) {
   const additionalDurationObject = ref<DurationObjectUnits>({ hours: 0, minutes: 0, seconds: 0 });
   const additionalDuration = computed(() => Duration.fromObject(additionalDurationObject.value));
   const luxon = computed(() => Duration.fromObject(toValue(initial)).plus(additionalDuration.value));
-
-  const { normalized, days, hours, minutes, seconds, milliseconds, asMilliseconds, asSeconds, asMinutes, asHours, formatted } = useDurationDisplay(luxon);
+  const useWeek:Ref<boolean> = ref(options.useWeek)
+  const displayOptions = computed(() =>{ return { useWeek:useWeek.value }})
+  const {
+    normalized,
+    days, hours, minutes, seconds, milliseconds,
+    display,
+    asMilliseconds,asSeconds, asMinutes, asHours,asDays,asWeeks,
+    formatted,formattedToMilli,humanLike,bahasa
+  } = useDurationDisplay(luxon,displayOptions);
 
   function set(newDur: DurationObjectUnits) {
     additionalDurationObject.value = Duration.fromObject({ seconds: 0 }).minus(toValue(initial)).plus(newDur).toObject();
@@ -48,47 +32,43 @@ export function useDuration(initial: MaybeRefOrGetter<DurationObjectUnits> = { h
     additionalDurationObject.value = Duration.fromObject({ seconds: 0 }).minus(toValue(initial)).toObject();
   }
 
-  // Timer logic via useTimer composable
-  const timer = useTimer({
-    onTick(deltaMs: number) {
-      add({ milliseconds: deltaMs });
-    }
-  });
-
-  function run() {
-    timer.run();
+  function toFormat(fmt:string){
+    return luxon.value.toFormat(fmt)
   }
 
-  function stop() {
-    timer.stop();
+  function toHuman(opts?: ToHumanDurationOptions){
+    return luxon.value.toHuman(opts)
   }
 
-  const isRunning = timer.isRunning;
+  function toggleWeek(value?:boolean){
+    if(value === undefined) return useWeek.value = !useWeek.value
+    return useWeek.value = value
+  }
 
   return {
     luxon,
-    normalized,
-    days, hours, minutes, seconds, milliseconds,
-    asMilliseconds, asSeconds, asMinutes, asHours,
-    formatted,
-    set, add, subtract, reset,
-    run, stop, isRunning
+    normalized, days, hours, minutes, seconds, milliseconds,
+    display,
+    asMilliseconds,asSeconds, asMinutes, asHours,asDays,asWeeks,
+    formatted,formattedToMilli,humanLike,bahasa,
+    toFormat,toHuman,
+    set, add, subtract, reset,toggleWeek
   };
 }
 
-export function useDurationFromMilliseconds(milliseconds: MaybeRefOrGetter<number>): UseDuration {
+export function useDurationFromMilliseconds(milliseconds: MaybeRefOrGetter<number>) {
   return useDuration({ milliseconds:toValue(milliseconds) });
 }
-export function useDurationFromSeconds(seconds: MaybeRefOrGetter<number>): UseDuration {
+export function useDurationFromSeconds(seconds: MaybeRefOrGetter<number>) {
   return useDuration({ seconds:toValue(seconds) });
 }
-export function useDurationFromMinutes(minutes: MaybeRefOrGetter<number>): UseDuration {
+export function useDurationFromMinutes(minutes: MaybeRefOrGetter<number>) {
   return useDuration({ minutes:toValue(minutes) });
 }
-export function useDurationFromHours(hours: MaybeRefOrGetter<number>): UseDuration {
+export function useDurationFromHours(hours: MaybeRefOrGetter<number>) {
   return useDuration({ hours:toValue(hours) });
 }
-export function useDurationFromDays(days: MaybeRefOrGetter<number>): UseDuration {
+export function useDurationFromDays(days: MaybeRefOrGetter<number>) {
   return useDuration({ days:toValue(days) });
 }
 
