@@ -33,8 +33,11 @@ export default {
       currentComponent: null,
       pageMap: {
         useDuration: 'UseDuration',
+        useDurationDisplay: 'UseDurationDisplay',
         useTimeTracker: 'UseTimeTracker',
+        useTimer: 'UseTimer',
         useHabitTracker: 'UseHabitTracker',
+        useTimeTick: 'UseTimeTick',
       }
     }
   },
