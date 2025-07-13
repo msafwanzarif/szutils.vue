@@ -37,6 +37,7 @@ export function useDurationDisplay(luxon: MaybeRefOrGetter<Duration> = Duration.
       seconds: seconds.value.toString().padStart(2, "0"),
       milliseconds: Math.floor(milliseconds.value).toString().padStart(3, "0"),
       timer: formatted.value,
+      timerMilli: formattedToMilli.value,
       normal: humanLike.value,
       bahasa: bahasa.value,
     }
@@ -56,9 +57,9 @@ export function useDurationDisplay(luxon: MaybeRefOrGetter<Duration> = Duration.
   });
 
   const formattedToMilli = computed(() => {
-    if (toValue(options).useWeek && asWeeks.value >= 1) return normalized.value.toFormat("w'w' d'd' hh:mm:ss:S")
-    if (asDays.value >= 1) return normalized.value.toFormat("d'd' hh:mm:ss:S")
-    return normalized.value.toFormat("hh:mm:ss:S")
+    if (toValue(options).useWeek && asWeeks.value >= 1) return normalized.value.toFormat("w'w' d'd' hh:mm:ss:SSS")
+    if (asDays.value >= 1) return normalized.value.toFormat("d'd' hh:mm:ss:SSS")
+    return normalized.value.toFormat("hh:mm:ss:SSS")
   });
 
   const humanLike = computed(() => {
