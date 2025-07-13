@@ -1,15 +1,22 @@
 import { ref, computed, Ref, ComputedRef, reactive, toRefs } from 'vue';
-import { useTimeTick } from '../useTimeTick';
 import { useDurationFromMilliseconds } from '../useDuration';
+import { useTimeTickShared } from '../useTimeTickShared';
 
-export function useTimer() {
-  const onTick = (deltaMs: number, now: number) => {
+export function useTimer(options?: { autoStart?: boolean }) {
+  const onTick = (deltaMs: number, now: number,length:number) => {
     if (isPaused.value) return stopTicking()
     elapsed.value += deltaMs
     lastTick.value = now
+    timerLength.value = length
   }
 
-  const { run, stop:stopTicking, isRunning: isTicking } = useTimeTick({ onTick })
+  const onStop = (length:number) => {
+    timerLength.value = length
+  }
+
+  const timerLength = ref(0)
+
+  const { run, stop:stopTicking, isRunning: isTicking } = useTimeTickShared({ onTick,onStop })
 
   function start() {
     if(startedAt.value > 0) return
@@ -116,7 +123,13 @@ export function useTimer() {
     }
   }
 
+  // If autoStart is true, start timer on creation
+  if (options?.autoStart) {
+    start()
+  }
+
   return {
+    timerLength,
     start,
     pause,
     resume,
