@@ -4,8 +4,8 @@ import { Duration } from 'luxon';
 export function useDurationDisplay(luxon: MaybeRefOrGetter<Duration> = Duration.fromMillis(0),options:MaybeRefOrGetter<{useWeek: boolean}> = {useWeek: false}) {
 
   const normalized = computed(() =>{
-    // return toValue(luxon).shiftTo(...unitTracked.value,"milliseconds")
-    return toValue(luxon).rescale()
+    return toValue(luxon).shiftTo(...unitTracked.value,"milliseconds")
+    //return toValue(luxon).rescale()
   });
 
   const unitTracked : ComputedRef<("weeks" | "days" | "hours" | "minutes" | "seconds" | "milliseconds")[]> = computed(() =>{
@@ -109,5 +109,35 @@ export function useDurationDisplay(luxon: MaybeRefOrGetter<Duration> = Duration.
     asMilliseconds,asSeconds, asMinutes, asHours,asDays,asWeeks,
     formatted,formattedToMilli,humanLike,bahasa
   };
+}
+
+export function useDurationDisplayFromMilliseconds(milliseconds: MaybeRefOrGetter<number>,options:MaybeRefOrGetter<{useWeek: boolean}> = {useWeek: false}){
+  const luxon = computed(() => Duration.fromMillis(toValue(milliseconds)))
+  return useDurationDisplay(luxon,options)
+}
+
+export function useDurationDisplayFromSeconds(seconds: MaybeRefOrGetter<number>,options:MaybeRefOrGetter<{useWeek: boolean}> = {useWeek: false}){
+  const luxon = computed(() => Duration.fromObject({seconds:toValue(seconds)}))
+  return useDurationDisplay(luxon,options)
+}
+
+export function useDurationDisplayFromMinutes(minutes: MaybeRefOrGetter<number>,options:MaybeRefOrGetter<{useWeek: boolean}> = {useWeek: false}){
+  const luxon = computed(() => Duration.fromObject({minutes:toValue(minutes)}))
+  return useDurationDisplay(luxon,options)
+}
+
+export function useDurationDisplayFromHours(hours: MaybeRefOrGetter<number>,options:MaybeRefOrGetter<{useWeek: boolean}> = {useWeek: false}){
+  const luxon = computed(() => Duration.fromObject({hours:toValue(hours)}))
+  return useDurationDisplay(luxon,options)
+}
+
+export function useDurationDisplayFromDays(days: MaybeRefOrGetter<number>,options:MaybeRefOrGetter<{useWeek: boolean}> = {useWeek: false}){
+  const luxon = computed(() => Duration.fromObject({days:toValue(days)}))
+  return useDurationDisplay(luxon,options)
+}
+
+export function useDurationDisplayFromWeeks(weeks: MaybeRefOrGetter<number>,options:MaybeRefOrGetter<{useWeek: boolean}> = {useWeek: false}){
+  const luxon = computed(() => Duration.fromObject({weeks:toValue(weeks)}))
+  return useDurationDisplay(luxon,options)
 }
 
