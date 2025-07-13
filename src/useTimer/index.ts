@@ -1,38 +1,138 @@
-import { ref, computed } from 'vue';
+import { ref, computed, Ref, ComputedRef, reactive, toRefs } from 'vue';
+import { useTimeTick } from '../useTimeTick';
+import { useDurationFromMilliseconds } from '../useDuration';
 
-interface UseTimerOptions {
-  onTick: (deltaMs: number, now: number) => void;
-}
-
-export function useTimer(options: UseTimerOptions) {
-  const timer = ref<number | null>(null);
-  let lastTime = 0;
-
-  function run() {
-    if (timer.value !== null) return;
-    lastTime = performance.now();
-    timer.value = window.requestAnimationFrame(tick);
+export function useTimer() {
+  const onTick = (deltaMs: number, now: number) => {
+    if (isPaused.value) return stopTicking()
+    elapsed.value += deltaMs
+    lastTick.value = now
   }
 
-  function tick(now: number) {
-    const delta = now - lastTime;
-    lastTime = now;
-    options.onTick(delta,now);
-    timer.value = window.requestAnimationFrame(tick);
+  const { run, stop:stopTicking, isRunning: isTicking } = useTimeTick({ onTick })
+
+  function start() {
+    if(startedAt.value > 0) return
+    tickFrom.value = performance.timeOrigin
+    startedAt.value = tickFrom.value + performance.now()
+    run()
   }
 
-  function stop() {
-    if (timer.value !== null) {
-      window.cancelAnimationFrame(timer.value);
-      timer.value = null;
+  function pause() {
+    if(isPaused.value) return
+    stopTicking()
+    isPaused.value = true
+    pausedAt.value.push(tickFrom.value + performance.now())
+  }
+
+  function resume() {
+    if(!isPaused.value) return
+    isPaused.value = false
+    resumedAt.value.push(tickFrom.value + performance.now())
+    run()
+  }
+
+  function reset() {
+    stopTicking()
+    endedAt.value = 0
+    startedAt.value = 0
+    tickFrom.value = 0
+    lastTick.value = 0
+    isPaused.value = false
+    elapsed.value = 0
+    pausedAt.value.length = 0
+    resumedAt.value.length = 0
+  }
+
+  function stop(){
+    if(endedAt.value > 0) return
+    stopTicking()
+    let now = performance.now()
+    lastTick.value = now
+    return endedAt.value = tickFrom.value + now
+  }
+
+  const startedAt = ref(0)
+  const endedAt = ref(0)
+  const tickFrom = ref(0)
+  const lastTick = ref(0)
+  const isPaused = ref(false)
+  const pausedAt: Ref<number[]> = ref([])
+  const resumedAt: Ref<number[]> = ref([])
+  const pausedRecords: ComputedRef<number[][]> = computed(() => {
+    const records = []
+    for(let i = 0; i < pausedAt.value.length; i++){
+      const record = [pausedAt.value[i],resumedAt.value[i]]
+      records.push(record)
+    }
+    return records
+  })
+  const elapsed = ref(0)
+  const isRunning = computed(() => startedAt.value > 0 && isTicking.value);
+  const hasStoped = computed(() => endedAt.value > 0);
+  const notStarted = computed(() => startedAt.value <= 0);
+
+  const useDuration = computed(() =>{return useDurationFromMilliseconds(elapsed)})
+
+  const luxon = computed(() => useDuration.value.luxon.value)
+  const display = computed(() => useDuration.value.display.value)
+
+  function toJSON(){
+    return {
+      startedAt:startedAt.value,
+      endedAt:endedAt.value,
+      tickFrom:tickFrom.value,
+      lastTick:lastTick.value,
+      isPaused:isPaused.value,
+      elapsed:elapsed.value,
+      pausedAt:pausedAt.value,
+      resumedAt:resumedAt.value
     }
   }
 
-  const isRunning = computed(() => timer.value !== null);
+  function loadFromJSON(json: ReturnType<typeof toJSON>){
+    reset()
+    let {
+      tickFrom:tickFromVal,
+      startedAt:startedAtVal,
+      endedAt:endedAtVal,
+      lastTick:lastTickVal,
+      isPaused:isPausedVal,
+      elapsed:elapsedVal,
+      pausedAt:pausedAtVal,
+      resumedAt:resumedAtVal
+    } = reactive(json)
+    tickFrom.value = performance.timeOrigin
+    startedAt.value = startedAtVal
+    endedAt.value = endedAtVal
+    isPaused.value = isPausedVal
+    elapsed.value = elapsedVal
+    pausedAt.value = pausedAtVal
+    resumedAt.value = resumedAtVal
+    if(startedAt.value > 0 && endedAt.value <= 0 && !isPaused.value){
+      let now = tickFrom.value + performance.now()
+      elapsed.value += now - (tickFromVal + lastTickVal)
+      return run()
+    }
+  }
 
   return {
-    run,
+    start,
+    pause,
+    resume,
     stop,
-    isRunning
+    reset,
+    elapsed,
+    pausedRecords,
+    hasStoped,
+    notStarted,
+    isRunning,
+    isPaused,
+    toJSON,
+    loadFromJSON,
+    luxon,
+    display,
+    startedAt,
+    endedAt,
   };
 }
