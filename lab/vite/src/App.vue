@@ -1,12 +1,12 @@
 <template>
   <div>
     <nav class="navbar navbar-expand-lg navbar-light bg-light px-5">
-      <a class="navbar-brand" href="#">MyApp</a>
+      <a class="navbar-brand" href="#">SZutils.vue Demos</a>
       <div class="dropdown">
         <ul class="navbar-nav mr-auto">
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              Functions
+              Composables
             </a>
             <div class="dropdown-menu" aria-labelledby="navbarDropdown">
               <a v-for="(label, key) in pageMap" class="dropdown-item" href="#" @click.prevent="setPage(key)">{{ label }}</a>

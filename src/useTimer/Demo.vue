@@ -14,15 +14,11 @@
 
     <!-- Centered Card -->
     <div
-      class="d-flex justify-content-center align-items-center"
+      class="d-flex justify-content-center"
       style="min-height: calc(100vh - 200px);"
     >
       <div class="container" style="max-width: 800px;">
-        <div v-if="selectedKey" class="card shadow">
-          <div class="card-body">
-            <component :is="selectedComponent" />
-          </div>
-        </div>
+            <component v-if="selectedKey" :is="selectedComponent" />
       </div>
     </div>
   </div>
