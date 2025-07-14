@@ -2,7 +2,7 @@ import { ref, computed, Ref, ComputedRef, reactive, toRefs } from 'vue';
 import { useDurationFromMilliseconds } from '../useDuration';
 import { useTimeTickShared } from '../useTimeTickShared';
 
-export function useTimer(options?: { autoStart?: boolean }) {
+export function useTimer(options?: { autoStart?: boolean,refId?:string, onInterval?:(startedAt:number,endedAt:number,refId?:string) => void, onStop?:(startedAt:number,endedAt:number,breakRecords:number[][],refId?:string) => void }) {
   const onTick = (deltaMs: number, now: number,length:number) => {
     if (isPaused.value) return stopTicking()
     elapsed.value += deltaMs
@@ -21,7 +21,8 @@ export function useTimer(options?: { autoStart?: boolean }) {
   function start() {
     if(startedAt.value > 0) return
     tickFrom.value = performance.timeOrigin
-    startedAt.value = tickFrom.value + performance.now()
+    currentStart = tickFrom.value + performance.now()
+    startedAt.value = currentStart
     run()
   }
 
@@ -29,13 +30,17 @@ export function useTimer(options?: { autoStart?: boolean }) {
     if(isPaused.value) return
     stopTicking()
     isPaused.value = true
-    pausedAt.value.push(tickFrom.value + performance.now())
+    currentEnd = tickFrom.value + performance.now()
+    options?.onInterval?.(currentStart, currentEnd,options.refId)
+    pausedAt.value.push(currentEnd)
   }
 
   function resume() {
     if(!isPaused.value) return
     isPaused.value = false
-    resumedAt.value.push(tickFrom.value + performance.now())
+    currentStart = tickFrom.value + performance.now()
+    currentEnd = 0
+    resumedAt.value.push(currentStart)
     run()
   }
 
@@ -43,6 +48,8 @@ export function useTimer(options?: { autoStart?: boolean }) {
     stopTicking()
     endedAt.value = 0
     startedAt.value = 0
+    currentEnd = 0
+    currentStart = 0
     tickFrom.value = 0
     lastTick.value = 0
     isPaused.value = false
@@ -56,11 +63,21 @@ export function useTimer(options?: { autoStart?: boolean }) {
     stopTicking()
     let now = performance.now()
     lastTick.value = now
-    return endedAt.value = tickFrom.value + now
+    currentEnd = tickFrom.value + now
+    endedAt.value = currentEnd
+    if(isPaused.value){
+      resumedAt.value.push(currentEnd)
+      isPaused.value = false
+    } 
+    else(options?.onInterval?.(currentStart, currentEnd,options.refId))
+    options?.onStop?.(startedAt.value, endedAt.value, pausedRecords.value,options.refId)
+    return 
   }
 
   const startedAt = ref(0)
+  let currentStart = 0
   const endedAt = ref(0)
+  let currentEnd = 0
   const tickFrom = ref(0)
   const lastTick = ref(0)
   const isPaused = ref(false)
@@ -93,7 +110,9 @@ export function useTimer(options?: { autoStart?: boolean }) {
       isPaused:isPaused.value,
       elapsed:elapsed.value,
       pausedAt:pausedAt.value,
-      resumedAt:resumedAt.value
+      resumedAt:resumedAt.value,
+      currentEnd,
+      currentStart
     }
   }
 
@@ -107,7 +126,9 @@ export function useTimer(options?: { autoStart?: boolean }) {
       isPaused:isPausedVal,
       elapsed:elapsedVal,
       pausedAt:pausedAtVal,
-      resumedAt:resumedAtVal
+      resumedAt:resumedAtVal,
+      currentEnd:currentEndVal,
+      currentStart:currentStartVal
     } = reactive(json)
     tickFrom.value = performance.timeOrigin
     startedAt.value = startedAtVal
@@ -116,6 +137,8 @@ export function useTimer(options?: { autoStart?: boolean }) {
     elapsed.value = elapsedVal
     pausedAt.value = pausedAtVal
     resumedAt.value = resumedAtVal
+    currentEnd = currentEndVal
+    currentStart = currentStartVal
     if(startedAt.value > 0 && endedAt.value <= 0 && !isPaused.value){
       let now = tickFrom.value + performance.now()
       elapsed.value += now - (tickFromVal + lastTickVal)

@@ -17,14 +17,23 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref,Reactive,Ref } from 'vue'
 import { useTimer } from '..'
+import { generateId } from '../../utility'
 
-const timers = ref([reactive(useTimer({ autoStart: true }))])
+let timers: Ref<Reactive<ReturnType<typeof useTimer>>[]> = ref([])
 
 function addTimer() {
-  timers.value.push(reactive(useTimer({ autoStart: true })))
+  timers.value.push(reactive(useTimer({ autoStart: true, refId:generateId(), onInterval, onStop})))
 }
+
+function onInterval(startedAt: number, endedAt: number, id?: string) {
+  console.log(`Timer ${id} Interval: Started at ${startedAt}, Ended at ${endedAt}, Total Elapsed: ${endedAt - startedAt}ms`)
+}
+
+function onStop(startedAt: number, endedAt: number, breakRecords: number[][], id?: string) {
+  console.log(`Timer ${id} Stopped: Started at ${startedAt}, Ended at ${endedAt}, Total Elapsed: ${endedAt - startedAt}ms, Break Records:`, breakRecords)
+} 
 
 function removeTimer(idx: number) {
   timers.value[idx].stop()

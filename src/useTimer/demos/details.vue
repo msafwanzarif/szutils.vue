@@ -7,8 +7,8 @@
     </p>
     <div class="controls">
       <button @click="start" :disabled="isRunning || !notStarted">Start</button>
-      <button @click="pause" :disabled="!isRunning || isPaused">Pause</button>
-      <button @click="resume" :disabled="isPaused || notStarted || hasStoped">Resume</button>
+      <button v-if="isRunning" @click="pause" :disabled="!isRunning || isPaused">Pause</button>
+      <button v-if="isPaused" @click="resume" :disabled="isRunning || notStarted || hasStoped">Resume</button>
       <button @click="stop" :disabled="notStarted || hasStoped">Stop</button>
       <button @click="reset" :disabled="notStarted">Reset</button>
       <button @click="saveToStorage">💾 Save</button>
@@ -44,16 +44,21 @@ const {
   hasStoped,
   notStarted,
   isRunning,
+  isPaused,
   display,
   startedAt,
   endedAt,
   toJSON,
   loadFromJSON
-} = useTimer()
+} = useTimer({onInterval,onStop})
 
-const isPaused = computed(() => {
-  return !isRunning && !notStarted && !hasStoped
-})
+function onInterval(startedAt: number, endedAt: number) {
+  console.log(`Interval: Started at ${startedAt}, Ended at ${endedAt}, Total Elapsed: ${endedAt - startedAt}ms`)
+}
+
+function onStop(startedAt: number, endedAt: number, breakRecords: number[][]) {
+  console.log(`Stopped: Started at ${startedAt}, Ended at ${endedAt}, Total Elapsed: ${endedAt - startedAt}ms, Break Records:`, breakRecords)
+}
 
 // Load from localStorage on mount
 onMounted(() => {
