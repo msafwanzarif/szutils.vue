@@ -17,11 +17,11 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref,Reactive,Ref } from 'vue'
+import { reactive, ref } from 'vue'
 import { useTimer } from '..'
 import { generateId } from '../../utility'
 
-let timers: Ref<Reactive<ReturnType<typeof useTimer>>[]> = ref([])
+let timers = ref([reactive(useTimer({ autoStart: true, refId:generateId(), onInterval, onStop}))])
 
 function addTimer() {
   timers.value.push(reactive(useTimer({ autoStart: true, refId:generateId(), onInterval, onStop})))
