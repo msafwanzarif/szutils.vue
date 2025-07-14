@@ -38,6 +38,7 @@ export default {
         useTimer: 'UseTimer',
         useHabitTracker: 'UseHabitTracker',
         useTimeTick: 'UseTimeTick',
+        useMetas: 'UseMetas',
       }
     }
   },
