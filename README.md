@@ -19,7 +19,14 @@ A reactive Luxon-based stopwatch/timer with real-time tracking support.
 
 ---
 
-### 2. [`useTimeTracker`](./src/useTimeTracker)
+### 2. [`useDurationDisplay`](./src/useDurationDisplay)
+
+Format and display durations in a readable way.  
+✅ Converts milliseconds or Luxon durations to human-friendly strings.
+
+---
+
+### 3. [`useTimeTracker`](./src/useTimeTracker)
 
 Track how much time has been spent doing something — session-by-session or continuously.  
 ✅ Entries, streaks, grouping by day/week/month, and total duration.
@@ -28,7 +35,7 @@ Track how much time has been spent doing something — session-by-session or con
 
 ---
 
-### 3. [`useHabitTracker`](./src/useHabitTracker)
+### 4. [`useHabitTracker`](./src/useHabitTracker)
 
 A powerful daily/weekly/monthly habit tracker with goal setting, breaks, off-days, and personal best tracking.  
 ✅ Tracks reps per day, calculates pass/success, off/break days, streaks, and supports localStorage persistence.
@@ -40,11 +47,47 @@ A powerful daily/weekly/monthly habit tracker with goal setting, breaks, off-day
 
 ---
 
+### 5. [`useMetas`](./src/useMetas)
+
+Reactive metadata management for composables and utilities.  
+✅ Store, update, and retrieve meta info for tracking and display.
+
+---
+
+### 6. [`useTimer`](./src/useTimer)
+
+Simple interval-based timer composable.  
+✅ Start, stop, reset, and tick events for periodic actions.
+
+---
+
+### 7. [`useTimeTick`](./src/useTimeTick)
+
+Reactive ticking composable for time-based updates.  
+✅ Emits ticks at specified intervals for UI refresh or polling.
+
+---
+
+### 8. [`useTimeTickShared`](./src/useTimeTickShared)
+
+Shared ticking composable for global time updates across components.  
+✅ Centralized tick source for synchronized updates and avoid too much instances of scheduler.
+
+---
+
+### 9. [`generateId`](./src/utility)
+
+Utility function to generate unique IDs.  
+✅ Useful for keys, tracking, and dynamic lists.
+
+---
+
 ## 📁 Project Structure
 
 ```
 src/
 ├─ useDuration/
+├─ useDurationDisplay/
 ├─ useTimeTracker/
 ├─ useHabitTracker/
 │   ├─ index.ts
