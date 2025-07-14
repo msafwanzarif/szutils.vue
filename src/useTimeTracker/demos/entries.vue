@@ -108,7 +108,7 @@ function addRandomThisWeek() {
 
 // Reactive logic
 const isRed = computed(() =>
-  !entriesToday?.value || entriesToday.value.totalSeconds <= dailyStats.value.min
+  !isGreen.value && (!entriesToday?.value || entriesToday.value.totalSeconds <= dailyStats.value.min)
 )
 
 const isGreen = computed(() =>
