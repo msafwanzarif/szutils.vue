@@ -26,8 +26,8 @@ export function toDateTime(val?: DateTime | string | number | Date | undefined):
   return DateTime.now()
 }
 
-export function generateId(): string {
-  return cryptoRandomId(7)
+export function generateId(length:number = 7): string {
+  return cryptoRandomId(length)
 }
 
 function cryptoRandomId(length: number): string {
