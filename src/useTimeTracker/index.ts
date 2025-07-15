@@ -3,6 +3,7 @@ import { DateTime, Duration, DurationObjectUnits } from 'luxon'
 import { toDateTime, generateId } from '../utility'
 import { useMetas } from '../useMetas'
 import { TrackerEntryComputed, TrackerEntryRaw,TrackerGroup,StatsSummary } from './types'
+import { useTimeTickShared } from '../useTimeTickShared'
 
 export function useTimeTracker(initialId?: string, initialLabel?: string) {
   const entries = ref<TrackerEntryRaw[]>([])
@@ -93,6 +94,42 @@ export function useTimeTracker(initialId?: string, initialLabel?: string) {
   const monthlyStats = computed(() => computeStats(groupedByMonth.value))
   const allTimeStats = computed(() => computeEntryStats(computedEntries.value))
 
+  const currentElapsed = ref(0)
+  const startedAt = ref(0)
+  const endedAt = ref(0)
+  const currentNote = ref("")
+
+  const onTick = (delta:number) =>{
+    currentElapsed.value += delta
+  }
+
+  const run = (note?:string) => {
+    if(isRunning.value) return
+    if(note) currentNote.value = note
+    endedAt.value = 0
+    startedAt.value = new Date().getDate()
+    runTick()
+  }
+
+  const stop = (note?:string) => {
+    if(!isRunning.value) return
+    stopTick()
+    if(note) currentNote.value = note
+    endedAt.value = new Date().getDate()
+    recordTime(startedAt.value,endedAt.value,currentNote.value)
+    resetTimer()
+  }
+
+  const resetTimer = () => {
+    stopTick()
+    currentElapsed.value = 0
+    startedAt.value = 0
+    endedAt.value = 0
+    currentNote.value = ""
+  }
+
+  const { run:runTick, stop:stopTick,isRunning } = useTimeTickShared({ onTick })
+
   return {
     trackerId:id.value,
     label,
@@ -119,7 +156,10 @@ export function useTimeTracker(initialId?: string, initialLabel?: string) {
     meta,
     tags,
     note,
-    ...metaFunctions
+    ...metaFunctions,
+    run,
+    stop,
+    isRunning
   }
 }
 
