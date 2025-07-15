@@ -2,7 +2,7 @@ import { ref, computed, Ref, ComputedRef, reactive, toRefs } from 'vue';
 import { useDurationFromMilliseconds } from '../useDuration';
 import { useTimeTickShared } from '../useTimeTickShared';
 
-export function useTimer(options?: { autoStart?: boolean,refId?:string, onInterval?:(startedAt:number,endedAt:number,refId?:string) => void, onStop?:(startedAt:number,endedAt:number,breakRecords:number[][],refId?:string) => void }) {
+export function useTimer(options?: { autoStart?: boolean,autoReset?:boolean,refId?:string, onInterval?:(startedAt:number,endedAt:number,refId?:string) => void, onStop?:(startedAt:number,endedAt:number,breakRecords:number[][],refId?:string) => void }) {
   const onTick = (deltaMs: number, now: number,length:number) => {
     if (isPaused.value) return stopTicking()
     elapsed.value += deltaMs
@@ -71,6 +71,7 @@ export function useTimer(options?: { autoStart?: boolean,refId?:string, onInterv
     } 
     else(options?.onInterval?.(currentStart, currentEnd,options.refId))
     options?.onStop?.(startedAt.value, endedAt.value, pausedRecords.value,options.refId)
+    if(options?.autoReset) return reset()
     return 
   }
 
