@@ -1,6 +1,6 @@
 import { ref, computed, ComputedRef, Ref } from 'vue'
 import { DateTime } from 'luxon'
-import { toDateTime, generateId, getDateKey, computeEntryStats,computeReversedRanges,findFromRange } from '../utility'
+import { toDateTime, generateId, getDateKey, computeEntryStats,computeReversedRanges,findFromRange } from '../../utility'
 import type { HabitEntry, ComputedEntry, GoalRecord, OffDayRecord, GoalRange, OffDayRange, UseHabitTracker, GroupRecord, HabitTrackerJSON } from './types'
 
 export function useHabitTracker(initialId?: string, initialLabel?: string) : UseHabitTracker {

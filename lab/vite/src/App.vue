@@ -39,6 +39,7 @@ export default {
         useHabitTracker: 'UseHabitTracker',
         useTimeTick: 'UseTimeTick',
         useMetas: 'UseMetas',
+        useFirebaseDb: 'UseFirebaseDb',
       }
     }
   },
@@ -49,7 +50,7 @@ export default {
     setPage(pageName) {
       if(!pageName) return;
       this.currentComponent = markRaw(defineAsyncComponent(() =>
-        import(`../../../src/${pageName}/Demo.vue`)
+        import(`../../../src/composables/${pageName}/Demo.vue`)
       ))
     }
   }

@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue'
-import { generateId } from '../utility'
+import { generateId } from '../../utility'
 
 type MetaValue = string | number | boolean | null | string[] | number[]
 type MetaRecord = Record<string, MetaValue>

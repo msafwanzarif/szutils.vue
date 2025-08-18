@@ -19,7 +19,7 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { useTimer } from '..'
-import { generateId } from '../../utility'
+import { generateId } from '../../../utility'
 
 let timers = ref([reactive(useTimer({ autoStart: true, refId:generateId(), onInterval, onStop}))])
 

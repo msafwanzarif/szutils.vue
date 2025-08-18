@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 import { DateTime, Duration, DurationObjectUnits } from 'luxon'
-import { toDateTime, generateId } from '../utility'
+import { toDateTime, generateId } from '../../utility'
 import { useMetas } from '../useMetas'
 import { TrackerEntryComputed, TrackerEntryRaw,TrackerGroup,StatsSummary } from './types'
 

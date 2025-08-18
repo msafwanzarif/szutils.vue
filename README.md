@@ -6,36 +6,52 @@ A modular Vue 3 composables collection designed for reactive productivity, time 
 > 📦 Published as ESM & UMD on npm and CDN 
 > 🎯 Lightweight and reactive Vue composables
 
+## 🚀 Quick Start & Demo
+
+To run the interactive demo app and explore all composables:
+
+```bash
+# Install dependencies in root
+npm install
+
+# Navigate to the demo app
+cd lab/vite
+
+# Install demo app dependencies
+npm install
+
+# Start the demo app
+npm run dev
+```
+
+The demo app showcases all composables with interactive examples and live code demos.
+
 ---
 
 ## 📚 Utilities
 
-### 1. [`useDuration`](./src/useDuration)
+### 1. [`useDuration`](./src/composables/useDuration)
 
 A reactive Luxon-based stopwatch/timer with real-time tracking support.  
 ✅ Features `run()`, `stop()`, `reset()`, and `elapsed` tracking with `isRunning` status.
 
-> Demo: `src/useDuration/Demo.vue`
-
 ---
 
-### 2. [`useDurationDisplay`](./src/useDurationDisplay)
+### 2. [`useDurationDisplay`](./src/composables/useDurationDisplay)
 
 Format and display durations in a readable way.  
 ✅ Converts milliseconds or Luxon durations to human-friendly strings.
 
 ---
 
-### 3. [`useTimeTracker`](./src/useTimeTracker)
+### 3. [`useTimeTracker`](./src/composables/useTimeTracker)
 
 Track how much time has been spent doing something — session-by-session or continuously.  
 ✅ Entries, streaks, grouping by day/week/month, and total duration.
 
-> Demo: `src/useTimeTracker/Demo.vue`
-
 ---
 
-### 4. [`useHabitTracker`](./src/useHabitTracker)
+### 4. [`useHabitTracker`](./src/composables/useHabitTracker)
 
 A powerful daily/weekly/monthly habit tracker with goal setting, breaks, off-days, and personal best tracking.  
 ✅ Tracks reps per day, calculates pass/success, off/break days, streaks, and supports localStorage persistence.
@@ -47,35 +63,42 @@ A powerful daily/weekly/monthly habit tracker with goal setting, breaks, off-day
 
 ---
 
-### 5. [`useMetas`](./src/useMetas)
+### 5. [`useMetas`](./src/composables/useMetas)
 
 Reactive metadata management for composables and utilities.  
 ✅ Store, update, and retrieve meta info for tracking and display.
 
 ---
 
-### 6. [`useTimer`](./src/useTimer)
+### 6. [`useTimer`](./src/composables/useTimer)
 
 Simple interval-based timer composable.  
 ✅ Start, stop, reset, and tick events for periodic actions.
 
 ---
 
-### 7. [`useTimeTick`](./src/useTimeTick)
+### 7. [`useTimeTick`](./src/composables/useTimeTick)
 
 Reactive ticking composable for time-based updates.  
 ✅ Emits ticks at specified intervals for UI refresh or polling.
 
 ---
 
-### 8. [`useTimeTickShared`](./src/useTimeTickShared)
+### 8. [`useTimeTickShared`](./src/composables/useTimeTickShared)
 
 Shared ticking composable for global time updates across components.  
-✅ Centralized tick source for synchronized updates and avoid too much instances of scheduler.
+✅ Centralized tick source for synchronized updates.
 
 ---
 
-### 9. [`generateId`](./src/utility)
+### 9. [`useFirebaseDb`](./src/composables/useFirebaseDb)
+
+Firebase Firestore database integration composable.  
+✅ Reactive Firebase authentication and database operations with configuration management.
+
+---
+
+### 10. [`generateId`](./src/utility)
 
 Utility function to generate unique IDs.  
 ✅ Useful for keys, tracking, and dynamic lists.
@@ -86,22 +109,30 @@ Utility function to generate unique IDs.
 
 ```
 src/
-├─ useDuration/
-├─ useDurationDisplay/
-├─ useTimeTracker/
-├─ useHabitTracker/
-│   ├─ index.ts
-│   ├─ index.md
-│   ├─ Demo.vue
-│   ├─ demos/
-│   │   ├─ entries.vue
-│   │   ├─ settings.vue
-│   │   └─ dashboard.vue
+├─ composables/
+│   ├─ useDuration/
+│   ├─ useDurationDisplay/
+│   ├─ useTimeTracker/
+│   ├─ useHabitTracker/
+│   │   ├─ index.ts
+│   │   ├─ README.md
+│   │   ├─ Demo.vue
+│   │   ├─ demos/
+│   │   │   ├─ entries.vue
+│   │   │   ├─ settings.vue
+│   │   │   └─ dashboard.vue
+│   ├─ useMetas/
+│   ├─ useTimer/
+│   ├─ useTimeTick/
+│   ├─ useTimeTickShared/
+│   ├─ useTimeTracker/
+│   └─ useFirebaseDb/
+└─ utility/
 ```
 
 Each utility folder is self-contained with its own:
 - `index.ts` (main logic)
-- `index.md` (docs)
+- `README.md` (docs)
 - `Demo.vue` (interactive demo)
 - `demos/` folder (use-case demos, if needed)
 
