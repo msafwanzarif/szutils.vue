@@ -4,17 +4,6 @@ import { getFirestore } from "firebase/firestore";
 import { computed, ref, Ref } from "vue";
 import { signInWithEmailAndPassword } from "firebase/auth";
 
-// TODO: replace with your Firebase config (from Firebase Console)
-// const firebaseConfig = {
-//   apiKey: "AIzaSyB4Mkg5dhlKc47uaxQmrw3CZAO60x0sYxU",
-//   authDomain: "test-firebase-70f4b.firebaseapp.com",
-//   projectId: "test-firebase-70f4b",
-//   storageBucket: "test-firebase-70f4b.firebasestorage.app",
-//   messagingSenderId: "980380800452",
-//   appId: "1:980380800452:web:853bfde34800a9c641c091",
-//   measurementId: "G-ELCN4H7267"
-// };
-
 export function useFirebaseDb(projectId?:string){
 
   const app : Ref<FirebaseApp | null> = ref(null);
