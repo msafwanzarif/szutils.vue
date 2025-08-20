@@ -98,7 +98,14 @@ Firebase Firestore database integration composable.
 
 ---
 
-### 10. [`generateId`](./src/utility)
+### 10. [`useFirebaseDoc`](./src/composables/useFirebaseDoc)
+
+Reactive Firestore document management composable with real-time synchronization.  
+✅ Document CRUD operations, real-time updates via `onSnapshot`, dynamic document switching, and multi-project support.
+
+---
+
+### 11. [`generateId`](./src/utility)
 
 Utility function to generate unique IDs.  
 ✅ Useful for keys, tracking, and dynamic lists.
@@ -126,7 +133,8 @@ src/
 │   ├─ useTimeTick/
 │   ├─ useTimeTickShared/
 │   ├─ useTimeTracker/
-│   └─ useFirebaseDb/
+│   ├─ useFirebaseDb/
+│   └─ useFirebaseDoc/
 └─ utility/
 ```
 

@@ -40,6 +40,7 @@ export default {
         useTimeTick: 'UseTimeTick',
         useMetas: 'UseMetas',
         useFirebaseDb: 'UseFirebaseDb',
+        useFirebaseDoc: 'UseFirebaseDoc',
       }
     }
   },

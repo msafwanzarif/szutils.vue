@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { computed, ref, reactive, watch, Ref } from 'vue';
-import { useFirebaseDb } from '.';
+import { useFirebaseDb, firebaseAppList } from '.';
 import { doc, getDoc, setDoc, DocumentData } from "firebase/firestore";
 import FormModal from '../../components/FormModal.vue';
 
 const firebase = useFirebaseDb();
 const { db } = firebase;
+
+// Get available project IDs
+const availableProjects = computed(() => firebaseAppList.value)
 const docRef = ref(db.value ? doc(db.value, "test", "testId") : null);
 const isError = ref(false);
 watch(db, (newDb) => {
@@ -36,7 +39,6 @@ const docData: Ref<DocumentData | null> = ref(null);
 watch(docRef, async (newRef) => {
   if (newRef) {
     reloadDoc()
-    console.log("Document reference set:", newRef);
   } else {
     console.log("Document reference is null");
   }
@@ -58,10 +60,16 @@ const showLogin = ref(false);
 const showConfig = ref(false);
 const showConfigJson = ref(false);
 const showSetDoc = ref(false);
+const showSwitchDb = ref(false);
 
 // Document form
 const docForm = reactive({
   title: ''
+});
+
+// Switch database form
+const switchDbForm = reactive({
+  projectId: ''
 });
 
 // Login form
@@ -124,20 +132,91 @@ function submitConfigJson() {
     configJsonError.value = (error as Error).message || 'Invalid format';
   }
 }
+
+function openSwitchDb() {
+  // Pre-fill with current project
+  switchDbForm.projectId = firebase.currentId.value || ''
+  showSwitchDb.value = true
+}
+
+function submitSwitchDb() {
+  if (switchDbForm.projectId && switchDbForm.projectId !== firebase.currentId.value) {
+    firebase.useExisting(switchDbForm.projectId)
+  }
+  showSwitchDb.value = false
+}
 </script>
 
 <template>
   <div class="card shadow-sm p-4 my-4 mx-auto" style="max-width: 480px;">
-    <h2 class="mb-3">Document Data</h2>
-    <p>Current DB: {{ firebase.currentId.value ?? "No DB Configured" }}</p>
-    <pre v-if="firebase.currentId.value" class="bg-light p-2 rounded">{{ isError ? "Error fetching document. You might need to login" : (docData ? docData.title : "No Data Is set") }}</pre>
+    <h2 class="mb-3">useFirebaseDb Demo</h2>
+    
+    <!-- Database Info -->
+    <div class="row mb-3">
+      <div class="col-8">
+        <small class="text-muted">Current Database:</small>
+        <div>{{ firebase.currentId.value || "No DB Configured" }}</div>
+      </div>
+      <div class="col-4" v-if="availableProjects.length > 1">
+        <button class="btn btn-sm btn-outline-secondary" @click="openSwitchDb">
+          Switch
+        </button>
+      </div>
+    </div>
+    
+    <div v-if="firebase.currentId.value" class="mb-3">
+      <small class="text-muted">Authentication Status:</small>
+      <div>{{ firebase.isAuthenticated.value ? `Logged in as: ${firebase.user.value?.email}` : "Not logged in" }}</div>
+    </div>
+    
+    <!-- Document Data Display -->
+    <div v-if="firebase.currentId.value" class="mb-3">
+      <h5>Test Document Data:</h5>
+      <pre class="bg-light p-2 rounded">{{ isError ? "Error fetching document. You might need to login" : (docData ? JSON.stringify(docData, null, 2) : "No data set") }}</pre>
+    </div>
     <div class="d-flex gap-2 mt-3 flex-wrap">
       <button class="btn btn-primary" @click="setDocData" v-show="firebase.currentId.value">Save Document</button>
       <button class="btn btn-outline-secondary" @click="showLogin = true" v-show="firebase.currentId.value">Login</button>
       <button class="btn btn-outline-info" @click="showConfig = true">Set Config</button>
       <button class="btn btn-outline-warning" @click="showConfigJson = true">Set Config (JSON)</button>
+      <button 
+        class="btn btn-outline-primary" 
+        @click="openSwitchDb" 
+        v-show="availableProjects.length > 1"
+      >
+        Switch Database
+      </button>
     </div>
   </div>
+
+  <!-- Switch Database Modal -->
+  <FormModal 
+    v-model:show="showSwitchDb" 
+    title="Switch Database" 
+    submit-text="Switch"
+    submit-class="btn-primary"
+    @submit="submitSwitchDb"
+  >
+    <template #body>
+      <div class="mb-3">
+        <label class="form-label">Select Database Project</label>
+        <select v-model="switchDbForm.projectId" class="form-select" required>
+          <option value="">-- Select Project --</option>
+          <option 
+            v-for="projectId in availableProjects" 
+            :key="projectId" 
+            :value="projectId"
+          >
+            {{ projectId }}
+            <span v-if="projectId === firebase.currentId.value"> (current)</span>
+          </option>
+        </select>
+        <small class="form-text text-muted">
+          Available Firebase projects from initialized apps
+        </small>
+      </div>
+    </template>
+  </FormModal>
 
   <!-- Login Modal -->
   <FormModal 
