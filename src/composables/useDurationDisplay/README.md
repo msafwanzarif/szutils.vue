@@ -7,6 +7,47 @@ A Vue composable for formatting and displaying durations using [Luxon](https://m
 - Format durations in various styles (timer, human-like, Bahasa, etc.)
 - Automatically chooses units (weeks, days, hours, minutes, seconds, milliseconds)
 - Supports reactive input and options
+- **Renderless components** for flexible template usage
+
+## Usage
+
+### Composable API
+
+```ts
+import { ref } from 'vue'
+import { useDurationDisplayFromMilliseconds } from './index'
+
+const ms = ref(123456789)
+const { display } = useDurationDisplayFromMilliseconds(ms, { useWeek: true })
+
+// display.timer -> "2w 0d 06:56:56"
+// display.normal -> "2 weeks, 6 hours, 56 minutes, 56 seconds"
+// display.bahasa -> "2 minggu, 6 jam, 56 minit, 56 saat"
+```
+
+### Renderless Components
+
+For template flexibility, use the renderless components:
+
+```vue
+<template>
+  <DurationDisplayFromMilliseconds 
+    :milliseconds="inputMs" 
+    :options="{ useWeek: true }"
+    v-slot="{ humanLike, display }"
+  >
+    <div><strong>Human readable:</strong> {{ humanLike }}</div>
+    <div><strong>Custom format:</strong> {{ display.hours }}:{{ display.minutes }}:{{ display.seconds }}</div>
+  </DurationDisplayFromMilliseconds>
+</template>
+
+<script setup>
+import { DurationDisplayFromMilliseconds } from './component'
+const inputMs = ref(5000000)
+</script>
+```
+
+Available components: `DurationDisplay`, `DurationDisplayFromMilliseconds`, `DurationDisplayFromSeconds`, `DurationDisplayFromMinutes`, `DurationDisplayFromHours`, `DurationDisplayFromDays`, `DurationDisplayFromWeeks`.
 
 ## API
 

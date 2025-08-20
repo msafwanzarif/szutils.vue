@@ -1,5 +1,6 @@
 export * from './composables/useDuration';
 export * from './composables/useDurationDisplay'
+export * from './composables/useDurationDisplay/component'
 export { useHabitTracker } from './composables/useHabitTracker';
 export { useMetas } from './composables/useMetas';
 export { useTimer } from './composables/useTimer';
