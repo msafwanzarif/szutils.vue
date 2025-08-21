@@ -27,10 +27,6 @@ export function toDateTime(val?: DateTime | string | number | Date | undefined):
 }
 
 export function generateId(length:number = 7): string {
-  return cryptoRandomId(length)
-}
-
-function cryptoRandomId(length: number): string {
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
   const array = new Uint8Array(length)
   crypto.getRandomValues(array)
