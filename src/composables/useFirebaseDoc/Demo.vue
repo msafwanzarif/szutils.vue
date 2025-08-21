@@ -24,7 +24,7 @@ const onUpdate = (data: DocumentData | null) => {
   dataForm.title = postData?.title || ''
   dataForm.content = postData?.content || ''
   dataForm.author = postData?.author || ''
-  dataForm.tags = postData?.tags.join(', ') || ''
+  dataForm.tags = postData?.tags?.length?  postData.tags.join(', ') : ''
 }
 
 // Initialize the composable
