@@ -1,14 +1,40 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
 import { useFirebaseDoc } from '.'
+import { DocumentData } from 'firebase/firestore'
 import { firebaseAppList } from '../useFirebaseDb'
 import FormModal from '../../components/FormModal.vue'
+interface PostSchema extends DocumentData {
+  title: string
+  content: string
+  author: string
+  tags: string[]
+}
+
+const dataForm = reactive({
+  title: '',
+  content: '',
+  author: '',
+  tags: ''
+})
+
+const onUpdate = (data: DocumentData | null) => {
+  const postData = data as PostSchema | null
+  console.log('Document updated:', data)
+  dataForm.title = postData?.title || ''
+  dataForm.content = postData?.content || ''
+  dataForm.author = postData?.author || ''
+  dataForm.tags = postData?.tags.join(', ') || ''
+}
 
 // Initialize the composable
 const firebaseDoc = useFirebaseDoc({
   collectionId: 'posts',
-  documentId: 'demo-post'
+  documentId: 'demo-post',
+  onUpdate
 })
+
+const { data, exists:dataExisted } = firebaseDoc
 
 // Get available project IDs
 const availableProjects = computed(() => firebaseAppList.value)
@@ -17,13 +43,6 @@ const availableProjects = computed(() => firebaseAppList.value)
 const showSaveData = ref(false)
 const showChangeDoc = ref(false)
 
-// Data form
-const dataForm = reactive({
-  title: '',
-  content: '',
-  author: '',
-  tags: ''
-})
 
 // Change document form
 const changeDocForm = reactive({
@@ -48,12 +67,6 @@ async function submitSaveData() {
     
     await firebaseDoc.saveData(dataToSave)
     showSaveData.value = false
-    
-    // Clear form
-    dataForm.title = ''
-    dataForm.content = ''
-    dataForm.author = ''
-    dataForm.tags = ''
   } catch (error) {
     console.error('Save failed:', error)
   } finally {
@@ -121,8 +134,8 @@ function submitChangeDoc() {
       <strong>Auth Status:</strong> {{ firebaseDoc.isAuthenticated.value ? `Authenticated: (User: ${firebaseDoc.user.value?.email})` : 'Not Authenticated' }}
     </div>
     <!-- Document Status -->
-    <div class="alert" :class="firebaseDoc.exists.value ? 'alert-success' : 'alert-warning'">
-      <strong>Document Status:</strong> {{ firebaseDoc.exists.value ? 'Exists' : 'Does not exist' }}
+    <div class="alert" :class="dataExisted ? 'alert-success' : 'alert-warning'">
+      <strong>Document Status:</strong> {{ dataExisted ? 'Exists' : 'Does not exist' }}
       <span v-if="firebaseDoc.loading.value" class="ms-2">
         <span class="spinner-border spinner-border-sm"></span> Loading...
       </span>
@@ -134,8 +147,9 @@ function submitChangeDoc() {
     </div>
     
     <!-- Document Data Display -->
-    <div class="mb-3">
+    <div class="mb-3" v-show="dataExisted">
       <h5>Document Data (Real-time):</h5>
+      <p><b>{{ data?.title }}</b> by {{ data?.author }}</p>
       <pre class="bg-light p-3 rounded">{{ firebaseDoc.data || 'No data' }}</pre>
     </div>
     
@@ -150,6 +164,7 @@ function submitChangeDoc() {
       <button 
         class="btn btn-outline-primary" 
         @click="fetchData"
+        :disabled="!dataExisted"
       >
         Fetch Data
       </button>

@@ -11,6 +11,7 @@ A Vue 3 composable for reactive Firestore document management with real-time syn
 ✅ **Reactive Properties** - Document data, loading states, and existence checks  
 ✅ **TypeScript Support** - Fully typed with proper Firebase and Vue types  
 ✅ **Error Handling** - Comprehensive error states and logging  
+✅ **Update Callbacks** - Optional onUpdate callback for real-time changes  
 
 ## Basic Usage
 
@@ -21,7 +22,11 @@ import { useFirebaseDoc } from 'szutils.vue'
 // Initialize with document reference
 const firebaseDoc = useFirebaseDoc({
   collectionId: 'posts',
-  documentId: 'my-post-123'
+  documentId: 'my-post-123',
+  onUpdate: (data) => {
+    console.log('Document updated in real-time:', data)
+    // Sync with form state, show notifications, etc.
+  }
 })
 
 // Save data to document
@@ -66,6 +71,7 @@ interface UseFirebaseDocOptions {
   collectionId: string      // Firestore collection name
   documentId: string        // Document ID within collection
   mergeOnSave?: boolean     // Whether to merge data on save (default: true)
+  onUpdate?: (data: DocumentData | null) => void  // Real-time update callback
 }
 ```
 
@@ -140,7 +146,98 @@ firebaseDoc.changeDoc('users', 'user-123')
 firebaseDoc.changeDoc('posts', 'post-456', 'my-other-project')
 ```
 
+## onUpdate Callback
+
+The `onUpdate` callback is triggered whenever the document changes in real-time via Firestore's `onSnapshot`. This is useful for:
+
+- **Form synchronization** - Update form fields when document changes
+- **Notifications** - Show toast messages for real-time updates  
+- **Data transformation** - Process incoming data before display
+- **State management** - Sync with external state stores
+
+```typescript
+interface PostSchema {
+  title: string
+  content: string
+  author: string
+  tags: string[]
+}
+
+const onUpdate = (data: DocumentData | null) => {
+  const postData = data as PostSchema | null
+  
+  // Update form fields
+  if (postData) {
+    formData.title = postData.title
+    formData.content = postData.content
+    formData.author = postData.author
+    formData.tags = postData.tags.join(', ')
+  }
+  
+  // Show notification
+  if (postData) {
+    showToast(`Document "${postData.title}" was updated`)
+  }
+}
+
+const firebaseDoc = useFirebaseDoc({
+  collectionId: 'posts',
+  documentId: 'my-post',
+  onUpdate  // Callback for real-time updates
+})
+```
+
 ## Advanced Examples
+
+### Real-time Document Editor with onUpdate
+
+```vue
+<script setup>
+import { useFirebaseDoc } from 'szutils.vue'
+import { ref, reactive } from 'vue'
+
+const formData = reactive({
+  title: '',
+  content: '',
+  author: ''
+})
+
+// Real-time update callback
+const onUpdate = (data) => {
+  if (data) {
+    formData.title = data.title || ''
+    formData.content = data.content || ''
+    formData.author = data.author || ''
+  }
+}
+
+const firebaseDoc = useFirebaseDoc({
+  collectionId: 'documents',
+  documentId: 'shared-doc',
+  onUpdate
+})
+
+// Auto-save on changes
+const saveChanges = async () => {
+  await firebaseDoc.saveData({
+    ...formData,
+    lastModified: new Date().toISOString(),
+    modifiedBy: firebaseDoc.user.value?.email
+  })
+}
+</script>
+
+<template>
+  <div>
+    <input v-model="formData.title" @blur="saveChanges" placeholder="Document title" />
+    <textarea v-model="formData.content" @blur="saveChanges" placeholder="Content"></textarea>
+    <input v-model="formData.author" @blur="saveChanges" placeholder="Author" />
+    
+    <div v-if="firebaseDoc.loading" class="status">Saving...</div>
+    <div v-if="firebaseDoc.error" class="error">{{ firebaseDoc.error }}</div>
+  </div>
+</template>
+```
 
 ### Real-time Document Editor
 

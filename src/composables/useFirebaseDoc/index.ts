@@ -7,11 +7,12 @@ export interface UseFirebaseDocOptions {
   collectionId: string
   documentId: string
   mergeOnSave?: boolean
+  onUpdate?: (data: DocumentData | null) => void
 }
 
 export function useFirebaseDoc(options: UseFirebaseDocOptions) {
-  const { projectId, mergeOnSave = true } = options
-  
+  const { projectId, mergeOnSave = true, onUpdate } = options
+
   // Make collection and document IDs reactive
   const collectionId = ref(options.collectionId)
   const documentId = ref(options.documentId)
@@ -50,6 +51,7 @@ export function useFirebaseDoc(options: UseFirebaseDocOptions) {
           loading.value = false
           if (doc.exists()) {
             data.value = doc.data()
+            onUpdate?.(doc.data()) // Call onUpdate callback if provided
           } else {
             data.value = null
           }
