@@ -1,6 +1,7 @@
-import { ref, computed, watch, onUnmounted, Ref, onMounted } from 'vue'
-import { doc, getDoc, setDoc, onSnapshot, DocumentData, DocumentSnapshot, Unsubscribe } from 'firebase/firestore'
+import { ref, computed, watch, Ref, ComputedRef } from 'vue'
+import { doc, getDoc, setDoc, DocumentData, DocumentReference } from 'firebase/firestore'
 import { useFirebaseDb } from '../useFirebaseDb'
+import { useFirebaseDocListener } from '../useFirebaseDocListener'
 
 export interface UseFirebaseDocOptions {
   projectId?: string
@@ -10,7 +11,21 @@ export interface UseFirebaseDocOptions {
   onUpdate?: (data: DocumentData | null) => void
 }
 
-export function useFirebaseDoc(options: UseFirebaseDocOptions) {
+export type UseFirebaseDoc = ReturnType<typeof useFirebaseDb> & {
+  docRef: ComputedRef<DocumentReference | null>
+  data: ComputedRef<DocumentData | null>
+  loading: Ref<boolean>
+  error: Ref<string | null>
+  exists: ComputedRef<boolean>
+  id: ComputedRef<string>
+  collection: ComputedRef<string>
+  canWrite: Ref<boolean>,
+  saveData: (newData: DocumentData) => Promise<void>
+  getData: () => Promise<DocumentData | null>
+  changeDoc: (newCollectionId: string, newDocumentId: string, newProjectId?: string) => void
+}
+
+export function useFirebaseDoc(options: UseFirebaseDocOptions): UseFirebaseDoc {
   const { projectId, mergeOnSave = true, onUpdate } = options
 
   // Make collection and document IDs reactive
@@ -21,58 +36,21 @@ export function useFirebaseDoc(options: UseFirebaseDocOptions) {
   const firebase = useFirebaseDb(projectId)
   
   // Document data state
-  const data: Ref<DocumentData | null> = ref(null)
+  let data = computed(() => docRef.value? useFirebaseDocListener(docRef.value, loading, error).value as DocumentData | null : null)
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const canWrite = ref(true)
   
   // Document reference
   const docRef = computed(() => 
     firebase.db.value ? doc(firebase.db.value, collectionId.value, documentId.value) : null
   )
   
-  // Snapshot unsubscriber
-  let unsubscribe: Unsubscribe | null = null
-  
   // Setup real-time listener when docRef changes
-  watch(docRef, (newDocRef) => {
-    // Clean up previous listener
-    if (unsubscribe) {
-      unsubscribe()
-      unsubscribe = null
-    }
-    
-    if (newDocRef) {
-      loading.value = true
-      error.value = null
-      // Setup real-time listener
-      unsubscribe = onSnapshot(
-        newDocRef,
-        (doc: DocumentSnapshot) => {
-          loading.value = false
-          if (doc.exists()) {
-            data.value = doc.data()
-            onUpdate?.(doc.data()) // Call onUpdate callback if provided
-          } else {
-            data.value = null
-          }
-        },
-        (err) => {
-          loading.value = false
-          error.value = err.message
-          console.error('Document listener error:', err)
-        }
-      )
-    } else {
-      data.value = null
-      loading.value = false
-    }
-  }, { immediate: true })
-  
-  // Clean up listener on unmount
-  onUnmounted(() => {
-    if (unsubscribe) {
-      unsubscribe()
-    }
+  const { userEmail } = firebase
+  watch(userEmail, (newEmail) => {
+    getData()
+    canWrite.value = true
   })
 
   watch(firebase.isSet, (isSet) => {
@@ -91,11 +69,12 @@ export function useFirebaseDoc(options: UseFirebaseDocOptions) {
       }
       loading.value = true
       error.value = null
-      
+      console.log("Saving data to", docRef.value.path, newData)
       await setDoc(docRef.value, newData, { merge: mergeOnSave })
-      
+      canWrite.value = true;
       // Note: data will be updated automatically via onSnapshot
     } catch (err) {
+      canWrite.value = false;
       error.value = (err as Error).message
       throw err
     } finally {
@@ -116,7 +95,7 @@ export function useFirebaseDoc(options: UseFirebaseDocOptions) {
       
       const docSnap = await getDoc(docRef.value)
       const result = docSnap.exists() ? docSnap.data() : null
-      
+      //data.value = result;
       return result
     } catch (err) {
       error.value = (err as Error).message
@@ -153,11 +132,20 @@ export function useFirebaseDoc(options: UseFirebaseDocOptions) {
     // Update collection and document IDs
     collectionId.value = newCollectionId
     documentId.value = newDocumentId
-    
+    canWrite.value = true
+
     // The docRef computed will automatically update and trigger the watcher
     // which will clean up the old listener and set up a new one
   }
-  
+
+  watch(data, (newData) => {
+    //if (newData) {
+      if(onUpdate) {
+        onUpdate(newData as DocumentData | null);
+      }
+    //}
+  }, { deep: true })
+
   return {
     // Extend firebase composable
     ...firebase,
@@ -170,6 +158,7 @@ export function useFirebaseDoc(options: UseFirebaseDocOptions) {
     exists,
     id,
     collection,
+    canWrite,
     
     // Document-specific methods
     saveData,
