@@ -5,7 +5,7 @@ A Vue 3 composable for Firebase Firestore database integration with reactive aut
 ## Features
 
 ✅ **Reactive Firebase App Management** - Automatically handles Firebase app initialization and switching  
-✅ **Authentication Integration** - Built-in email/password authentication with signup, login, and logout  
+✅ **Authentication Integration** - Built-in email/password and Google authentication with signup, login, and logout  
 ✅ **Firestore Database Access** - Reactive database instance with automatic updates  
 ✅ **Dynamic Configuration** - Runtime Firebase config setup with JSON/JS object parsing  
 ✅ **Multi-Project Support** - Handle multiple Firebase projects in one application  
@@ -36,6 +36,9 @@ await firebase.login('user@example.com', 'password')
 
 // Or signup new user
 await firebase.signup('newuser@example.com', 'password')
+
+// Or login with Google
+await firebase.loginWithGoogle()
 
 // Logout current user
 await firebase.logout()
@@ -144,6 +147,24 @@ try {
 }
 ```
 
+#### `loginWithGoogle()`
+Authenticate user with Google OAuth popup.
+
+```typescript
+try {
+  const user = await firebase.loginWithGoogle()
+  console.log('Logged in with Google:', user)
+} catch (error) {
+  if (error.code === 'auth/popup-closed-by-user') {
+    console.log('User cancelled Google sign-in')
+  } else if (error.code === 'auth/popup-blocked') {
+    console.error('Popup blocked by browser')
+  } else {
+    console.error('Google sign-in failed:', error)
+  }
+}
+```
+
 #### `useExisting(projectId?: string)`
 Switch to an existing Firebase app by project ID.
 
@@ -245,11 +266,16 @@ import { useFirebaseDb } from 'szutils.vue'
 const firebase = useFirebaseDb()
 
 // Handle authentication errors
-async function handleAuth(email, password, isSignup = false) {
+async function handleAuth(email, password, isSignup = false, isGoogle = false) {
   try {
-    const user = isSignup 
-      ? await firebase.signup(email, password)
-      : await firebase.login(email, password)
+    let user;
+    if (isGoogle) {
+      user = await firebase.loginWithGoogle()
+    } else {
+      user = isSignup 
+        ? await firebase.signup(email, password)
+        : await firebase.login(email, password)
+    }
     console.log('Success:', user)
   } catch (error) {
     if (error.code === 'auth/user-not-found') {
@@ -260,6 +286,10 @@ async function handleAuth(email, password, isSignup = false) {
       console.error('Email already registered')
     } else if (error.code === 'auth/weak-password') {
       console.error('Password too weak')
+    } else if (error.code === 'auth/popup-closed-by-user') {
+      console.log('Google sign-in cancelled')
+    } else if (error.code === 'auth/popup-blocked') {
+      console.error('Popup blocked - please allow popups')
     }
   }
 }
@@ -292,7 +322,7 @@ async function fetchDocument() {
 
 See `Demo.vue` for a complete interactive example with:
 - Configuration forms (individual fields and JSON input)
-- Authentication flow (signup, login, logout)
+- Authentication flow (signup, login, Google login, logout)
 - Document operations
 - Multi-project switching
 - Error handling

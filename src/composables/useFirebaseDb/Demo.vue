@@ -126,6 +126,26 @@ async function handleLogout() {
   }
 }
 
+// Google login function
+const googleLoading = ref(false);
+async function handleGoogleLogin() {
+  googleLoading.value = true;
+  try {
+    await firebase.loginWithGoogle();
+    reloadDoc();
+  } catch (error) {
+    console.error('Google login failed:', error);
+    if ((error as any).code === 'auth/popup-closed-by-user') {
+      console.log('User cancelled Google sign-in');
+    } else if ((error as any).code === 'auth/popup-blocked') {
+      alert('Popup blocked by browser. Please allow popups for this site.');
+    } else {
+      alert('Google sign-in failed');
+    }
+  }
+  googleLoading.value = false;
+}
+
 // Config form
 const configForm = reactive({
   apiKey: '',
@@ -219,6 +239,15 @@ function submitSwitchDb() {
       <div v-if="firebase.currentId.value" class="btn-group">
         <button class="btn btn-outline-success" @click="showSignup = true" v-if="!firebase.isAuthenticated.value">Signup</button>
         <button class="btn btn-outline-secondary" @click="showLogin = true" v-if="!firebase.isAuthenticated.value">Login</button>
+        <button 
+          class="btn btn-danger" 
+          @click="handleGoogleLogin" 
+          :disabled="googleLoading"
+          v-if="!firebase.isAuthenticated.value"
+        >
+          <span v-if="googleLoading" class="spinner-border spinner-border-sm me-2" role="status"></span>
+          {{ googleLoading ? 'Signing in...' : 'Google Login' }}
+        </button>
         <button class="btn btn-outline-danger" @click="handleLogout" v-if="firebase.isAuthenticated.value">Logout</button>
       </div>
       <button class="btn btn-outline-info" @click="showConfig = true">Set Config</button>

@@ -2,7 +2,7 @@ import { FirebaseApp, initializeApp, getApps, getApp, FirebaseOptions } from "fi
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { computed, ref, Ref, onMounted } from "vue";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "firebase/auth";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 
 export const firebaseAppList = ref<string[]>([]);
 
@@ -85,6 +85,19 @@ export function useFirebaseDb(projectId?: string) {
     }
   }
 
+  async function loginWithGoogle() {
+    if (!app.value || !auth.value) return
+    try {
+      const provider = new GoogleAuthProvider();
+      const userCred = await signInWithPopup(auth.value, provider);
+      console.log("Logged in with Google:", userCred.user);
+      return userCred.user;
+    } catch (err) {
+      console.error("Google login failed", err);
+      throw err;
+    }
+  }
+
   function getList() {
     return firebaseAppList.value;
   }
@@ -112,6 +125,7 @@ export function useFirebaseDb(projectId?: string) {
     login,
     signup,
     logout,
+    loginWithGoogle,
     getList
   }
 }
