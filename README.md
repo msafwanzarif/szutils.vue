@@ -1,10 +1,11 @@
 # szutils.vue
 
-A modular Vue 3 composables collection designed for reactive productivity, time tracking, and habit building. Each utility is independently packaged, documented, and demo-ready.
+A modular Vue 3 composables collection designed for reactive productivity, time tracking, habit building, and Firebase integration. Each utility is independently packaged, documented, and demo-ready with comprehensive TypeScript support.
 
 > 🔧 Built with Vite + TypeScript  
 > 📦 Published as ESM & UMD on npm and CDN 
 > 🎯 Lightweight and reactive Vue composables
+> 🔥 Firebase integration with authentication & real-time sync
 
 ## 🚀 Quick Start & Demo
 
@@ -39,8 +40,9 @@ A reactive Luxon-based stopwatch/timer with real-time tracking support.
 
 ### 2. [`useDurationDisplay`](./src/composables/useDurationDisplay)
 
-Format and display durations in a readable way.  
-✅ Converts milliseconds or Luxon durations to human-friendly strings.
+Format and display durations in a readable way with renderless components.  
+✅ Converts milliseconds or Luxon durations to human-friendly strings.  
+✅ Includes renderless Vue components for flexible duration display in templates.
 
 ---
 
@@ -93,19 +95,29 @@ Shared ticking composable for global time updates across components.
 
 ### 9. [`useFirebaseDb`](./src/composables/useFirebaseDb)
 
-Firebase Firestore database integration composable.  
-✅ Reactive Firebase authentication and database operations with configuration management.
+Firebase Firestore database integration with complete authentication suite.  
+✅ Email/password authentication, Google OAuth, multi-project configuration.  
+✅ Reactive user state, automatic session management, and Firebase app switching.
 
 ---
 
 ### 10. [`useFirebaseDoc`](./src/composables/useFirebaseDoc)
 
-Reactive Firestore document management composable with real-time synchronization.  
-✅ Document CRUD operations, real-time updates via `onSnapshot`, dynamic document switching, and multi-project support.
+Reactive Firestore document management with real-time synchronization and callbacks.  
+✅ Document CRUD operations, real-time updates via `onSnapshot`, dynamic document switching.  
+✅ `onUpdate` callbacks for reactive data handling, multi-project support, TypeScript integration.
 
 ---
 
-### 11. [`generateId`](./src/utility)
+### 11. [`useFirebaseDocListener`](./src/composables/useFirebaseDocListener)
+
+Efficient Firestore document listener with global deduplication and memory management.  
+✅ Prevents duplicate listeners for the same document across components.  
+✅ Automatic cleanup, shared data updates, and optimized Firebase reads for performance.
+
+---
+
+### 12. [`generateId`](./src/utility)
 
 Utility function to generate unique IDs.  
 ✅ Useful for keys, tracking, and dynamic lists.
@@ -119,6 +131,10 @@ src/
 ├─ composables/
 │   ├─ useDuration/
 │   ├─ useDurationDisplay/
+│   │   ├─ index.ts
+│   │   ├─ component.ts        # Renderless components
+│   │   ├─ README.md
+│   │   └─ Demo.vue
 │   ├─ useTimeTracker/
 │   ├─ useHabitTracker/
 │   │   ├─ index.ts
@@ -132,22 +148,38 @@ src/
 │   ├─ useTimer/
 │   ├─ useTimeTick/
 │   ├─ useTimeTickShared/
-│   ├─ useTimeTracker/
 │   ├─ useFirebaseDb/
-│   └─ useFirebaseDoc/
-└─ utility/
+│   │   ├─ index.ts
+│   │   ├─ README.md
+│   │   └─ Demo.vue
+│   ├─ useFirebaseDoc/
+│   │   ├─ index.ts
+│   │   ├─ README.md
+│   │   └─ Demo.vue
+│   └─ useFirebaseDocListener/
+│       ├─ index.ts
+│       └─ README.md
+├─ utility/
+└─ components/
+    └─ FormModal.vue           # Reusable form modal component
 ```
 
 Each utility folder is self-contained with its own:
-- `index.ts` (main logic)
-- `README.md` (docs)
+- `index.ts` (main logic with TypeScript support)
+- `README.md` (comprehensive documentation)
 - `Demo.vue` (interactive demo)
+- `component.ts` (renderless components, where applicable)
 - `demos/` folder (use-case demos, if needed)
 
 ## 📦 Installation
 
 ```bash
 npm install szutils.vue
+```
+
+For Firebase composables, also install Firebase:
+```bash
+npm install firebase
 ```
 
 Or use via CDN:
