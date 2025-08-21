@@ -5,7 +5,7 @@ import { doc, getDoc, setDoc, DocumentData } from "firebase/firestore";
 import FormModal from '../../components/FormModal.vue';
 
 const firebase = useFirebaseDb();
-const { db } = firebase;
+const { db, userEmail } = firebase;
 
 // Get available project IDs
 const availableProjects = computed(() => firebaseAppList.value)
@@ -57,6 +57,7 @@ async function submitSetDoc() {
 
 // Modal state
 const showLogin = ref(false);
+const showSignup = ref(false);
 const showConfig = ref(false);
 const showConfigJson = ref(false);
 const showSetDoc = ref(false);
@@ -72,6 +73,27 @@ const switchDbForm = reactive({
   projectId: ''
 });
 
+// Signup form
+const signupForm = reactive({
+  email: '',
+  password: ''
+});
+const signupLoading = ref(false);
+async function submitSignup() {
+  signupLoading.value = true;
+  try {
+    await firebase.signup(signupForm.email, signupForm.password);
+    showSignup.value = false;
+    signupForm.email = '';
+    signupForm.password = '';
+    reloadDoc();
+  } catch (error) {
+    console.error('Signup failed:', error);
+    alert("Fail to Signup")
+  }
+  signupLoading.value = false;
+}
+
 // Login form
 const loginForm = reactive({
   email: '',
@@ -80,10 +102,28 @@ const loginForm = reactive({
 const loginLoading = ref(false);
 async function submitLogin() {
   loginLoading.value = true;
-  await firebase.login(loginForm.email, loginForm.password);
+  try {
+    await firebase.login(loginForm.email, loginForm.password);
+    showLogin.value = false;
+    loginForm.email = '';
+    loginForm.password = '';
+    reloadDoc();
+  } catch (error) {
+    console.error('Login failed:', error);
+    alert("Fail to Login")
+  }
   loginLoading.value = false;
-  showLogin.value = false;
-  reloadDoc()
+}
+
+// Logout function
+async function handleLogout() {
+  try {
+    await firebase.logout();
+    docData.value = null;
+  } catch (error) {
+    console.error('Logout failed:', error);
+    alert("Failed to Logout")
+  }
 }
 
 // Config form
@@ -166,7 +206,7 @@ function submitSwitchDb() {
     
     <div v-if="firebase.currentId.value" class="mb-3">
       <small class="text-muted">Authentication Status:</small>
-      <div>{{ firebase.isAuthenticated.value ? `Logged in as: ${firebase.user.value?.email}` : "Not logged in" }}</div>
+      <div>{{ firebase.isAuthenticated.value ? `Logged in as: ${userEmail}` : "Not logged in" }}</div>
     </div>
     
     <!-- Document Data Display -->
@@ -176,7 +216,11 @@ function submitSwitchDb() {
     </div>
     <div class="d-flex gap-2 mt-3 flex-wrap">
       <button class="btn btn-primary" @click="setDocData" v-show="firebase.currentId.value">Save Document</button>
-      <button class="btn btn-outline-secondary" @click="showLogin = true" v-show="firebase.currentId.value">Login</button>
+      <div v-if="firebase.currentId.value" class="btn-group">
+        <button class="btn btn-outline-success" @click="showSignup = true" v-if="!firebase.isAuthenticated.value">Signup</button>
+        <button class="btn btn-outline-secondary" @click="showLogin = true" v-if="!firebase.isAuthenticated.value">Login</button>
+        <button class="btn btn-outline-danger" @click="handleLogout" v-if="firebase.isAuthenticated.value">Logout</button>
+      </div>
       <button class="btn btn-outline-info" @click="showConfig = true">Set Config</button>
       <button class="btn btn-outline-warning" @click="showConfigJson = true">Set Config (JSON)</button>
       <button 
@@ -214,6 +258,28 @@ function submitSwitchDb() {
         <small class="form-text text-muted">
           Available Firebase projects from initialized apps
         </small>
+      </div>
+    </template>
+  </FormModal>
+
+  <!-- Signup Modal -->
+  <FormModal 
+    v-model:show="showSignup" 
+    title="Create Account" 
+    submit-text="Signup"
+    submit-class="btn-success"
+    :loading="signupLoading"
+    @submit="submitSignup"
+  >
+    <template #body>
+      <div class="mb-3">
+        <label class="form-label">Email</label>
+        <input v-model="signupForm.email" type="email" class="form-control" required />
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Password</label>
+        <input v-model="signupForm.password" type="password" class="form-control" required />
+        <small class="form-text text-muted">Password should be at least 6 characters</small>
       </div>
     </template>
   </FormModal>

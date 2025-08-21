@@ -2,7 +2,7 @@ import { FirebaseApp, initializeApp, getApps, getApp, FirebaseOptions } from "fi
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { computed, ref, Ref, onMounted } from "vue";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "firebase/auth";
 
 export const firebaseAppList = ref<string[]>([]);
 
@@ -30,6 +30,7 @@ export function useFirebaseDb(projectId?: string) {
   const db = computed(() => app.value ? getFirestore(app.value) : null);
 
   const user = computed(() => auth.value?.currentUser);
+  const userEmail = computed(() => user.value ? user.value.email : null);
   const isAuthenticated = computed(() => !!user.value);
 
   const currentId = computed(() => app.value ? app.value.options.projectId : null);
@@ -54,9 +55,38 @@ export function useFirebaseDb(projectId?: string) {
     try {
       const userCred = await signInWithEmailAndPassword(auth.value, email, password);
       console.log("Logged in:", userCred.user);
+      return userCred.user;
     } catch (err) {
       console.error("Login failed", err);
+      throw err;
     }
+  }
+
+  async function signup(email: string, password: string) {
+    if (!app.value || !auth.value) return
+    try {
+      const userCred = await createUserWithEmailAndPassword(auth.value, email, password);
+      console.log("User created:", userCred.user);
+      return userCred.user;
+    } catch (err) {
+      console.error("Signup failed", err);
+      throw err;
+    }
+  }
+
+  async function logout() {
+    if (!auth.value) return
+    try {
+      await signOut(auth.value);
+      console.log("Logged out");
+    } catch (err) {
+      console.error("Logout failed", err);
+      throw err;
+    }
+  }
+
+  function getList() {
+    return firebaseAppList.value;
   }
 
   const isSet = computed(() => !!app.value && !!db.value);
@@ -65,18 +95,23 @@ export function useFirebaseDb(projectId?: string) {
     if (!isSet.value) {
       useExisting()
     }
+    syncFirebaseAppList()
   })
 
   return {
     app,
     auth,
     user,
+    userEmail,
     isSet,
     isAuthenticated,
     db,
     currentId,
     useExisting,
     setConfig,
-    login
+    login,
+    signup,
+    logout,
+    getList
   }
 }

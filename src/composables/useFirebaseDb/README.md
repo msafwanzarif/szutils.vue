@@ -5,7 +5,7 @@ A Vue 3 composable for Firebase Firestore database integration with reactive aut
 ## Features
 
 ✅ **Reactive Firebase App Management** - Automatically handles Firebase app initialization and switching  
-✅ **Authentication Integration** - Built-in email/password authentication with reactive user state  
+✅ **Authentication Integration** - Built-in email/password authentication with signup, login, and logout  
 ✅ **Firestore Database Access** - Reactive database instance with automatic updates  
 ✅ **Dynamic Configuration** - Runtime Firebase config setup with JSON/JS object parsing  
 ✅ **Multi-Project Support** - Handle multiple Firebase projects in one application  
@@ -33,6 +33,12 @@ firebase.setConfig({
 
 // Login user
 await firebase.login('user@example.com', 'password')
+
+// Or signup new user
+await firebase.signup('newuser@example.com', 'password')
+
+// Logout current user
+await firebase.logout()
 
 // Use Firestore
 const docRef = doc(firebase.db.value, 'collection', 'documentId')
@@ -107,11 +113,50 @@ Authenticate user with email and password.
 
 ```typescript
 try {
-  await firebase.login('user@example.com', 'password')
-  console.log('Logged in:', firebase.user.value)
+  const user = await firebase.login('user@example.com', 'password')
+  console.log('Logged in:', user)
 } catch (error) {
   console.error('Login failed:', error)
 }
+```
+
+#### `signup(email: string, password: string)`
+Create a new user account with email and password.
+
+```typescript
+try {
+  const user = await firebase.signup('newuser@example.com', 'password')
+  console.log('User created:', user)
+} catch (error) {
+  console.error('Signup failed:', error)
+}
+```
+
+#### `logout()`
+Sign out the current user.
+
+```typescript
+try {
+  await firebase.logout()
+  console.log('Logged out successfully')
+} catch (error) {
+  console.error('Logout failed:', error)
+}
+```
+
+#### `useExisting(projectId?: string)`
+Switch to an existing Firebase app by project ID.
+
+```typescript
+firebase.useExisting('my-other-project')
+```
+
+#### `getList()`
+Get list of available Firebase project IDs.
+
+```typescript
+const projects = firebase.getList()
+console.log('Available projects:', projects)
 ```
 
 ## Advanced Examples
@@ -200,15 +245,21 @@ import { useFirebaseDb } from 'szutils.vue'
 const firebase = useFirebaseDb()
 
 // Handle authentication errors
-async function handleLogin(email, password) {
+async function handleAuth(email, password, isSignup = false) {
   try {
-    await firebase.login(email, password)
-    // Success
+    const user = isSignup 
+      ? await firebase.signup(email, password)
+      : await firebase.login(email, password)
+    console.log('Success:', user)
   } catch (error) {
     if (error.code === 'auth/user-not-found') {
       console.error('User not found')
     } else if (error.code === 'auth/wrong-password') {
       console.error('Invalid password')
+    } else if (error.code === 'auth/email-already-in-use') {
+      console.error('Email already registered')
+    } else if (error.code === 'auth/weak-password') {
+      console.error('Password too weak')
     }
   }
 }
@@ -241,8 +292,9 @@ async function fetchDocument() {
 
 See `Demo.vue` for a complete interactive example with:
 - Configuration forms (individual fields and JSON input)
-- Authentication flow
+- Authentication flow (signup, login, logout)
 - Document operations
+- Multi-project switching
 - Error handling
 - Bootstrap UI components
 
