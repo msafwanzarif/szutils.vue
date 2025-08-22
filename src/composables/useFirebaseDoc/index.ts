@@ -74,7 +74,10 @@ export function useFirebaseDoc(options: UseFirebaseDocOptions): UseFirebaseDoc {
       
       if (timeSinceLastWrite < WRITE_DEBOUNCE_MS) {
         const remainingTime = WRITE_DEBOUNCE_MS - timeSinceLastWrite
-        throw new Error(`Write blocked: ${remainingTime}ms remaining until next write allowed`)
+        const message = `Write blocked: ${remainingTime}ms remaining until next write allowed`
+        console.error(message)
+        error.value = message
+        return
       }
       
       if (!docRef.value) {
