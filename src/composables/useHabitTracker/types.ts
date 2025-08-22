@@ -94,7 +94,7 @@ export interface CustomStats extends StatsSummary {
 
 export interface HabitTrackerJSON {
   id: string;
-  currentVersion?:string;
+  currentVersion?:number;
   label: string | undefined;
   entries: {
     timestamp: number;
@@ -129,7 +129,8 @@ export interface HabitTrackerJSON {
 export interface UseHabitTracker {
   id: string
   label: Ref<string | undefined>
-
+  currentVersion: Ref<number>
+  dbVersion: Ref<number>
   // Reactive data
   entries: Ref<HabitEntry[]>
   dailyGoals: Ref<GoalRecord[]>
@@ -214,6 +215,6 @@ export interface UseHabitTracker {
     isOffDay(date: DateTime | string | number | Date): boolean
   }
 
-  toJSON: () => HabitTrackerJSON
+  toJSON: (version?:boolean) => HabitTrackerJSON
   loadFromJSON: (json: HabitTrackerJSON) => void
 }

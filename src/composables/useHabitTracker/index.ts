@@ -1,10 +1,20 @@
-import { ref, computed, MaybeRefOrGetter, watch, toValue, onMounted } from 'vue'
+import { ref, computed, MaybeRefOrGetter, watch, toValue, onMounted, Ref } from 'vue'
 import { DateTime } from 'luxon'
 import { toDateTime, generateId, getDateKey, computeEntryStats, computeReversedRanges, findFromRange } from '../../utility'
 import type { HabitEntry, ComputedEntry, GoalRecord, OffDayRecord, GoalRange, OffDayRange, UseHabitTracker, GroupRecord, HabitTrackerJSON } from './types'
 import type { UseFirebaseDoc } from '../useFirebaseDoc'
 
+const trackers: Map<string, UseHabitTracker> = new Map()
+
 export function useHabitTracker(initialId?: string, initialLabel?: string, syncWithFirebase: MaybeRefOrGetter<boolean> = false, firebaseDoc?: UseFirebaseDoc): UseHabitTracker {
+  if (initialId && trackers.has(initialId)) {
+    const tracker = trackers.get(initialId) as UseHabitTracker
+    if (tracker) {
+      if (initialLabel) tracker.label.value = initialLabel
+      setWatcher(tracker.toJSON, tracker.loadFromJSON, tracker.currentVersion, tracker.dbVersion, syncWithFirebase, firebaseDoc)
+    }
+    return tracker
+  }
   const id = initialId || generateId()
   const label = ref<string | undefined>(initialLabel)
 
@@ -22,8 +32,8 @@ export function useHabitTracker(initialId?: string, initialLabel?: string, syncW
   const monthBreaks = ref<string[]>([])  // e.g., "2025-07"
   const offDayRecords = ref<OffDayRecord[]>([])
 
-  const currentVersion = ref<string>("")
-  const dbVersion = ref<string>("")
+  const currentVersion = ref<number>(0)
+  const dbVersion = ref<number>(0)
 
   const dailyGoalsRanges = computed<GoalRange[]>(() => computeReversedRanges(dailyGoals.value))
   const weeklyGoalsRanges = computed<GoalRange[]>(() => computeReversedRanges(weeklyGoals.value))
@@ -471,10 +481,12 @@ export function useHabitTracker(initialId?: string, initialLabel?: string, syncW
     }
   }
 
-  function toJSON(): HabitTrackerJSON {
+  function toJSON(version:boolean = false): HabitTrackerJSON {
+    let versionToSave = version ? currentVersion.value : undefined
     return {
       id,
       label: label.value,
+      currentVersion: versionToSave,
       entries: entries.value.map(e => ({
         ...e,
         timestamp: e.timestamp.toMillis(), // convert to epoch millis
@@ -496,7 +508,7 @@ export function useHabitTracker(initialId?: string, initialLabel?: string, syncW
     if (!data || typeof data !== 'object') return
 
     label.value = data.label || ''
-    currentVersion.value = data.currentVersion || ''
+    currentVersion.value = data.currentVersion || 0
 
     entries.value = Array.isArray(data.entries)
       ? data.entries.map((e: any) => ({
@@ -510,9 +522,7 @@ export function useHabitTracker(initialId?: string, initialLabel?: string, syncW
     dailyGoals.value = Array.isArray(data.dailyGoals) ? [...data.dailyGoals] : []
     weeklyGoals.value = Array.isArray(data.weeklyGoals) ? [...data.weeklyGoals] : []
     monthlyGoals.value = Array.isArray(data.monthlyGoals) ? [...data.monthlyGoals] : []
-    console.log(889, data.offDayRecords)
-    offDayRecords.value = JSON.parse(JSON.stringify(data.offDayRecords))
-    console.log(890, offDayRecords.value)
+    offDayRecords.value = Array.isArray(data.offDayRecords) ? [...data.offDayRecords] : []
 
     dayBreaks.value = Array.isArray(data.dayBreaks) ? [...data.dayBreaks] : []
     weekBreaks.value = Array.isArray(data.weekBreaks) ? [...data.weekBreaks] : []
@@ -524,66 +534,15 @@ export function useHabitTracker(initialId?: string, initialLabel?: string, syncW
   }
 
 
-
   onMounted(() => {
-   //console.log("mounted", firebaseDoc)
-    watch(
-      () => toJSON(),
-      (json: HabitTrackerJSON) => {
-        if(!currentVersion.value) return currentVersion.value = generateId()
-        if (firebaseDoc) {
-          if(dbVersion.value == currentVersion.value) return dbVersion.value = ""
-          let newVersion = generateId()
-          currentVersion.value = newVersion
-          json.currentVersion = newVersion
-          let { canWrite } = firebaseDoc
-          if (toValue(syncWithFirebase) && canWrite) {
-            //console.log("saving to firebase", toValue(syncWithFirebase))
-            firebaseDoc?.saveData(json)
-          }
-        }
-        else{
-          let newVersion = generateId()
-          currentVersion.value = newVersion
-        }
-      },
-      { deep: true }
-    )
-    if (firebaseDoc) {
-      //console.log("setting watchers")
-      const { data } = firebaseDoc
-      dbVersion.value = data.value?.currentVersion
-      watch(
-        data,
-        (data) => {
-          const toLoad = data as HabitTrackerJSON
-          //console.log("data changed", toLoad)
-          if(toLoad) dbVersion.value = toLoad.currentVersion || ""
-          if (toValue(syncWithFirebase) && toLoad && (toLoad.currentVersion !== currentVersion.value)) {
-            //console.log("syncing from firebase", toLoad)
-            loadFromJSON(toLoad)
-          }
-        },
-        { deep: true, immediate: true }
-      )
-      watch(
-        () => toValue(syncWithFirebase),
-        (shouldSync) => {
-          const toLoad = data.value as HabitTrackerJSON
-          if(toLoad) dbVersion.value = toLoad.currentVersion || ""
-          if (shouldSync && toLoad && (toLoad.currentVersion !== currentVersion.value)) {
-            //console.log("syncing from firebase", toLoad)
-            loadFromJSON(toLoad)
-          }
-        }
-      )
-    }
+    setWatcher(toJSON, loadFromJSON, currentVersion, dbVersion, syncWithFirebase, firebaseDoc)
   })
 
   let exportValue = {
     id,
     label,
-
+    currentVersion,
+    dbVersion,
     // state
     entries,
     dailyGoals,
@@ -655,7 +614,80 @@ export function useHabitTracker(initialId?: string, initialLabel?: string, syncW
     toJSON,
     loadFromJSON
   }
+  trackers.set(id, exportValue)
   return exportValue
+}
+
+function setWatcher(toJSON: () => HabitTrackerJSON, loadFromJSON: (json: HabitTrackerJSON) => void, currentVersion: Ref<number>, dbVersion: Ref<number>, syncWithFirebase?: MaybeRefOrGetter<boolean>, firebaseDoc?: UseFirebaseDoc) {
+  watch(
+    () => toJSON(),
+    (json: HabitTrackerJSON) => {
+      if (!currentVersion.value) return currentVersion.value = 1
+      if (firebaseDoc) {
+        if (dbVersion.value == currentVersion.value) return dbVersion.value = 0
+        let newVersion = Date.now()
+        currentVersion.value = newVersion
+        json.currentVersion = newVersion
+        let { canWrite, isSet } = firebaseDoc
+        if (toValue(syncWithFirebase) && canWrite.value && isSet.value) {
+          console.log("saving to firebase", toValue(syncWithFirebase))
+          firebaseDoc?.saveData(json)
+        }
+      }
+      else {
+        let newVersion = Date.now()
+        currentVersion.value = newVersion
+      }
+    },
+    { deep: true }
+  )
+  if (firebaseDoc) {
+    //console.log("setting watchers")
+    const { data } = firebaseDoc
+    dbVersion.value = data.value?.currentVersion
+    watch(
+      data,
+      (data) => {
+        const toLoad = data as HabitTrackerJSON
+        if(!toValue(syncWithFirebase)) return
+        if(toLoad?.currentVersion && toLoad?.currentVersion < currentVersion.value){
+          console.log("saving to firebase")
+          let json = toJSON()
+          json.currentVersion = currentVersion.value
+          firebaseDoc?.saveData(json)
+          return
+        } 
+        if(toLoad?.currentVersion === currentVersion.value) return
+        //console.log("data changed", toLoad)
+        if (toLoad) dbVersion.value = toLoad.currentVersion || 0
+        if (toValue(syncWithFirebase) && toLoad && (toLoad.currentVersion !== currentVersion.value)) {
+          console.log("syncing from firebase", toLoad)
+          loadFromJSON(toLoad)
+        }
+      },
+      { deep: true, immediate: true }
+    )
+    watch(
+      () => toValue(syncWithFirebase),
+      (shouldSync) => {
+        if(!shouldSync) return
+        const toLoad = data.value as HabitTrackerJSON
+        if(toLoad?.currentVersion && toLoad?.currentVersion < currentVersion.value){
+          console.log("saving to firebase")
+          let json = toJSON()
+          json.currentVersion = currentVersion.value
+          firebaseDoc?.saveData(json)
+          return
+        } 
+        if(toLoad?.currentVersion === currentVersion.value) return
+        if (toLoad) dbVersion.value = toLoad.currentVersion || 0
+        if (shouldSync && toLoad && (toLoad.currentVersion !== currentVersion.value)) {
+          console.log("syncing from firebase", toLoad)
+          loadFromJSON(toLoad)
+        }
+      }
+    )
+  }
 }
 
 
