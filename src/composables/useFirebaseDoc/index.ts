@@ -41,6 +41,10 @@ export function useFirebaseDoc(options: UseFirebaseDocOptions): UseFirebaseDoc {
   const error = ref<string | null>(null)
   const canWrite = ref(true)
   
+  // Track last write timestamp to prevent rapid saves
+  let lastWriteTimestamp = 0
+  const WRITE_DEBOUNCE_MS = 500 // 5 seconds
+  
   // Document reference
   const docRef = computed(() => 
     firebase.db.value ? doc(firebase.db.value, collectionId.value, documentId.value) : null
@@ -64,14 +68,29 @@ export function useFirebaseDoc(options: UseFirebaseDocOptions): UseFirebaseDoc {
    */
   async function saveData(newData: DocumentData) {
     try {
+      // Check if enough time has passed since last write
+      const now = Date.now()
+      const timeSinceLastWrite = now - lastWriteTimestamp
+      
+      if (timeSinceLastWrite < WRITE_DEBOUNCE_MS) {
+        const remainingTime = WRITE_DEBOUNCE_MS - timeSinceLastWrite
+        throw new Error(`Write blocked: ${remainingTime}ms remaining until next write allowed`)
+      }
+      
       if (!docRef.value) {
         throw new Error('Document reference not available. Make sure Firebase is configured.')
       }
+      
       loading.value = true
       error.value = null
       console.log("Saving data to", docRef.value.path, newData)
+      
       await setDoc(docRef.value, newData, { merge: mergeOnSave })
+      
+      // Update timestamp after successful write
+      lastWriteTimestamp = now
       canWrite.value = true;
+      
       // Note: data will be updated automatically via onSnapshot
     } catch (err) {
       canWrite.value = false;
@@ -133,6 +152,9 @@ export function useFirebaseDoc(options: UseFirebaseDocOptions): UseFirebaseDoc {
     collectionId.value = newCollectionId
     documentId.value = newDocumentId
     canWrite.value = true
+
+    // Reset write timestamp when changing documents
+    lastWriteTimestamp = 0
 
     // The docRef computed will automatically update and trigger the watcher
     // which will clean up the old listener and set up a new one
