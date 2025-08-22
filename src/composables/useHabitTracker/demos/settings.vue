@@ -103,11 +103,14 @@
 import { ref, watch, onMounted,computed } from 'vue'
 import { DateTime } from 'luxon'
 import { useHabitTracker } from '../index'
+import { useFirebaseDoc } from '../../useFirebaseDoc'
 
 const STORAGE_KEY = 'habit-learning'
 const started = ref(false)
+const useFirebase = ref(true)
 
-const learning = useHabitTracker('learning-tracker', 'Learning Tracker')
+const firebaseDoc = useFirebaseDoc({collectionId:"habit-tracker", documentId:"learning-tracker"})
+const learning = useHabitTracker('learning-tracker', 'Learning Tracker', started, firebaseDoc)
 
 // Dates
 const today = DateTime.now()
@@ -137,7 +140,9 @@ onMounted(() => {
   const saved = localStorage.getItem(STORAGE_KEY)
   if (saved) {
     try {
-      learning.loadFromJSON(JSON.parse(saved))
+      if(!useFirebase.value){
+        learning.loadFromJSON(JSON.parse(saved))
+      }
     } catch (e) {
       console.warn('Failed to load tracker:', e)
     }
@@ -151,6 +156,7 @@ watch(
   () => learning.toJSON(),
   (json) => {
     if (started.value) {
+      reconfigureValues()
       localStorage.setItem(STORAGE_KEY, JSON.stringify(json))
     }
   },
@@ -161,13 +167,17 @@ watch(
 watch(started, (v) => {
   if (!v) return
 
+  reconfigureValues()
+})
+
+function reconfigureValues(){
   goalToday.value = learning.query.getGoal(1, today)
   goalYesterday.value = learning.query.getGoal(1, yesterday)
   goalWeek.value = learning.query.getGoal(2, today)
 
   const current = learning.offDayRecords.value.find(r => r.startDate === todayKey)
   offDaySelection.value = current?.days ?? []
-})
+}
 
 watch(effectiveDate, () => {
   goalToday.value = learning.query.getGoal(1, effectiveDate.value)
