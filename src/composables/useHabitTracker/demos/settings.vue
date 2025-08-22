@@ -110,6 +110,7 @@ const started = ref(false)
 const useFirebase = ref(true)
 
 const firebaseDoc = useFirebaseDoc({collectionId:"habit-tracker", documentId:"learning-tracker"})
+const { isSet, exists } = firebaseDoc
 const learning = useHabitTracker('learning-tracker', 'Learning Tracker', started, firebaseDoc)
 
 // Dates
@@ -140,7 +141,7 @@ onMounted(() => {
   const saved = localStorage.getItem(STORAGE_KEY)
   if (saved) {
     try {
-      if(!useFirebase.value){
+      if(!useFirebase.value || !isSet.value || !exists.value){
         learning.loadFromJSON(JSON.parse(saved))
       }
     } catch (e) {
@@ -157,7 +158,7 @@ watch(
   (json) => {
     if (started.value) {
       reconfigureValues()
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(json))
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(learning.toJSON(true)))
     }
   },
   { deep: true }

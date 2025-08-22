@@ -95,27 +95,34 @@ import { DateTime } from 'luxon'
 import { useHabitTracker } from '../index'
 
 import { watch, onMounted } from 'vue'
+import { useFirebaseDoc } from '../../useFirebaseDoc'
 
 const STORAGE_KEY = 'habit-learning'
-let started = false
-const learning = useHabitTracker('learning-tracker', 'Learning Tracker')
+const started = ref(false)
+const useFirebase = ref(true)
+const firebaseDoc = useFirebaseDoc({collectionId:"habit-tracker", documentId:"learning-tracker"})
+const { isSet, exists } = firebaseDoc
+const learning = useHabitTracker('learning-tracker', 'Learning Tracker', started, firebaseDoc)
+
 onMounted(() => {
   const saved = localStorage.getItem(STORAGE_KEY)
   if (saved) {
     try {
-      learning.loadFromJSON(JSON.parse(saved))
+      if(!useFirebase.value || !isSet.value || !exists.value){
+        learning.loadFromJSON(JSON.parse(saved))
+      }
     } catch (e) {
       console.warn('Failed to load saved tracker data:', e)
     }
   }
-  started = true
+  started.value = true
 })
 
 watch(
   () => learning.toJSON(),
   (json) => {
     if (!started) return
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(json))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(learning.toJSON(true)))
   },
   { deep: true }
 )
