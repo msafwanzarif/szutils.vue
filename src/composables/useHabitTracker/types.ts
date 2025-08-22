@@ -94,6 +94,7 @@ export interface CustomStats extends StatsSummary {
 
 export interface HabitTrackerJSON {
   id: string;
+  currentVersion?:string;
   label: string | undefined;
   entries: {
     timestamp: number;

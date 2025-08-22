@@ -1,9 +1,10 @@
-import { ref, computed, ComputedRef, Ref } from 'vue'
+import { ref, computed, MaybeRefOrGetter, watch, toValue, onMounted } from 'vue'
 import { DateTime } from 'luxon'
-import { toDateTime, generateId, getDateKey, computeEntryStats,computeReversedRanges,findFromRange } from '../../utility'
+import { toDateTime, generateId, getDateKey, computeEntryStats, computeReversedRanges, findFromRange } from '../../utility'
 import type { HabitEntry, ComputedEntry, GoalRecord, OffDayRecord, GoalRange, OffDayRange, UseHabitTracker, GroupRecord, HabitTrackerJSON } from './types'
+import type { UseFirebaseDoc } from '../useFirebaseDoc'
 
-export function useHabitTracker(initialId?: string, initialLabel?: string) : UseHabitTracker {
+export function useHabitTracker(initialId?: string, initialLabel?: string, syncWithFirebase: MaybeRefOrGetter<boolean> = false, firebaseDoc?: UseFirebaseDoc): UseHabitTracker {
   const id = initialId || generateId()
   const label = ref<string | undefined>(initialLabel)
 
@@ -12,14 +13,17 @@ export function useHabitTracker(initialId?: string, initialLabel?: string) : Use
   const weeklyGoals = ref<GoalRecord[]>([])
   const monthlyGoals = ref<GoalRecord[]>([])
 
-  const minDaily = ref<number>(0)
-  const minWeekly = ref<number>(0)
-  const minMonthly = ref<number>(0)
-  
+  const minDaily = ref<number>(1)
+  const minWeekly = ref<number>(1)
+  const minMonthly = ref<number>(1)
+
   const dayBreaks = ref<string[]>([])    // e.g., "2025-07-09"
   const weekBreaks = ref<string[]>([])   // e.g., "2025-W28"
   const monthBreaks = ref<string[]>([])  // e.g., "2025-07"
   const offDayRecords = ref<OffDayRecord[]>([])
+
+  const currentVersion = ref<string>("")
+  const dbVersion = ref<string>("")
 
   const dailyGoalsRanges = computed<GoalRange[]>(() => computeReversedRanges(dailyGoals.value))
   const weeklyGoalsRanges = computed<GoalRange[]>(() => computeReversedRanges(weeklyGoals.value))
@@ -106,8 +110,8 @@ export function useHabitTracker(initialId?: string, initialLabel?: string) : Use
 
     const list =
       type === 1 ? dayBreaks.value :
-      type === 2 ? weekBreaks.value :
-      monthBreaks.value
+        type === 2 ? weekBreaks.value :
+          monthBreaks.value
 
     if (!list.includes(key)) {
       list.push(key)
@@ -115,7 +119,7 @@ export function useHabitTracker(initialId?: string, initialLabel?: string) : Use
   }
 
 
-  
+
   function recordRep(rep: number, note?: string, date?: DateTime | string | number | Date) {
     const d = toDateTime(date)
     const entry: HabitEntry = {
@@ -144,15 +148,15 @@ export function useHabitTracker(initialId?: string, initialLabel?: string) : Use
     }
   }
 
-   function setGoal(type: 1 | 2 | 3, target: number, date?: DateTime | string | number | Date) {
+  function setGoal(type: 1 | 2 | 3, target: number, date?: DateTime | string | number | Date) {
     const dt = toDateTime(date)
     const key = getDateKey(dt, type)
     const goals =
       type === 1 ? dailyGoals.value :
-      type === 2 ? weeklyGoals.value :
-      monthlyGoals.value
+        type === 2 ? weeklyGoals.value :
+          monthlyGoals.value
     const currentGoal = query.getGoal(type, dt)
-    if( currentGoal === target ) return
+    if (currentGoal === target) return
     const existing = goals.find(g => g.startDate === key)
     if (existing && existing.target === target) return
     if (existing) existing.target = target
@@ -162,8 +166,8 @@ export function useHabitTracker(initialId?: string, initialLabel?: string) : Use
   function removeGoal(dateKey: string, type: 1 | 2 | 3) {
     const goals =
       type === 1 ? dailyGoals.value :
-      type === 2 ? weeklyGoals.value :
-      monthlyGoals.value
+        type === 2 ? weeklyGoals.value :
+          monthlyGoals.value
     const index = goals.findIndex(g => g.startDate === dateKey)
     if (index !== -1) goals.splice(index, 1)
   }
@@ -176,10 +180,10 @@ export function useHabitTracker(initialId?: string, initialLabel?: string) : Use
     getGoal: (type: 1 | 2 | 3, date?: DateTime | string | number | Date) =>
       findFromRange(
         type === 1 ? dailyGoalsRanges.value :
-        type === 2 ? weeklyGoalsRanges.value :
-        monthlyGoalsRanges.value,
+          type === 2 ? weeklyGoalsRanges.value :
+            monthlyGoalsRanges.value,
         getDateKey(toDateTime(date), type)
-      )?.target ?? 0,
+      )?.target ?? 1,
 
     getCustomGroups: (type: 1 | 2 | 3, start?: DateTime, end?: DateTime) => {
       const groups = type === 1 ? dailyGroups.value : type === 2 ? weeklyGroups.value : monthlyGroups.value
@@ -226,11 +230,11 @@ export function useHabitTracker(initialId?: string, initialLabel?: string) : Use
       const group = (typeOrName === 1
         ? dailyGroups.value
         : typeOrName === 2
-        ? weeklyGroups.value
-        : monthlyGroups.value
+          ? weeklyGroups.value
+          : monthlyGroups.value
       ).find(g => g.key === key)
 
-      return group?? emptyGroupRecord()
+      return group ?? emptyGroupRecord()
     },
 
     getStatus: (type: 1 | 2 | 3, date?: DateTime | string | number | Date) => {
@@ -240,45 +244,45 @@ export function useHabitTracker(initialId?: string, initialLabel?: string) : Use
       const group = (type === 1
         ? dailyGroups.value
         : type === 2
-        ? weeklyGroups.value
-        : monthlyGroups.value
+          ? weeklyGroups.value
+          : monthlyGroups.value
       ).find(g => g.key === key)
 
       const prevKey = getDateKey(
         type === 1
           ? now.minus({ days: 1 })
           : type === 2
-          ? now.minus({ weeks: 1 })
-          : now.minus({ months: 1 }),
+            ? now.minus({ weeks: 1 })
+            : now.minus({ months: 1 }),
         type
       )
 
       const prevGroup =
         (type === 1
-        ? dailyGroups.value
-        : type === 2
-        ? weeklyGroups.value
-        : monthlyGroups.value
-      ).find(g => g.key === prevKey)
+          ? dailyGroups.value
+          : type === 2
+            ? weeklyGroups.value
+            : monthlyGroups.value
+        ).find(g => g.key === prevKey)
 
       const goal = query.getGoal(type, now)
       const progress = group?.totalReps ?? 0
 
       const min =
         type === 1 ? minDaily.value
-        : type === 2 ? minWeekly.value
-        : minMonthly.value
+          : type === 2 ? minWeekly.value
+            : minMonthly.value
 
       const best =
         type === 1 ? dailyStats.value.max
-        : type === 2 ? weeklyStats.value.max
-        : monthlyStats.value.max
+          : type === 2 ? weeklyStats.value.max
+            : monthlyStats.value.max
 
-      const passedStreak = group?.passed?  group?.passedStreak ?? 0 : progress > 0
+      const passedStreak = group?.passed ? group?.passedStreak ?? 0 : progress > 0
         ? group?.passedStreak ?? 0
         : prevGroup?.passedStreak ?? 0
 
-      const successStreak = group?.success?  group?.successStreak ?? 0 : progress > 0
+      const successStreak = group?.success ? group?.successStreak ?? 0 : progress > 0
         ? group?.successStreak ?? 0
         : prevGroup?.successStreak ?? 0
 
@@ -467,7 +471,7 @@ export function useHabitTracker(initialId?: string, initialLabel?: string) : Use
     }
   }
 
-  function toJSON() : HabitTrackerJSON {
+  function toJSON(): HabitTrackerJSON {
     return {
       id,
       label: label.value,
@@ -492,32 +496,91 @@ export function useHabitTracker(initialId?: string, initialLabel?: string) : Use
     if (!data || typeof data !== 'object') return
 
     label.value = data.label || ''
+    currentVersion.value = data.currentVersion || ''
 
     entries.value = Array.isArray(data.entries)
       ? data.entries.map((e: any) => ({
-          id: e.id,
-          reps: e.reps,
-          note: e.note,
-          timestamp: toDateTime(e.timestamp), // handles millis or ISO
-        }))
+        id: e.id,
+        reps: e.reps,
+        note: e.note,
+        timestamp: toDateTime(e.timestamp), // handles millis or ISO
+      }))
       : []
 
     dailyGoals.value = Array.isArray(data.dailyGoals) ? [...data.dailyGoals] : []
     weeklyGoals.value = Array.isArray(data.weeklyGoals) ? [...data.weeklyGoals] : []
     monthlyGoals.value = Array.isArray(data.monthlyGoals) ? [...data.monthlyGoals] : []
-
-    offDayRecords.value = Array.isArray(data.offDayRecords) ? [...data.offDayRecords] : []
+    console.log(889, data.offDayRecords)
+    offDayRecords.value = JSON.parse(JSON.stringify(data.offDayRecords))
+    console.log(890, offDayRecords.value)
 
     dayBreaks.value = Array.isArray(data.dayBreaks) ? [...data.dayBreaks] : []
     weekBreaks.value = Array.isArray(data.weekBreaks) ? [...data.weekBreaks] : []
     monthBreaks.value = Array.isArray(data.monthBreaks) ? [...data.monthBreaks] : []
 
-    minDaily.value = typeof data.minDaily === 'number' ? data.minDaily : 0
-    minWeekly.value = typeof data.minWeekly === 'number' ? data.minWeekly : 0
-    minMonthly.value = typeof data.minMonthly === 'number' ? data.minMonthly : 0
+    minDaily.value = typeof data.minDaily === 'number' ? data.minDaily : 1
+    minWeekly.value = typeof data.minWeekly === 'number' ? data.minWeekly : 1
+    minMonthly.value = typeof data.minMonthly === 'number' ? data.minMonthly : 1
   }
 
-  return {
+
+
+  onMounted(() => {
+   //console.log("mounted", firebaseDoc)
+    watch(
+      () => toJSON(),
+      (json: HabitTrackerJSON) => {
+        if(!currentVersion.value) return currentVersion.value = generateId()
+        if (firebaseDoc) {
+          if(dbVersion.value == currentVersion.value) return dbVersion.value = ""
+          let newVersion = generateId()
+          currentVersion.value = newVersion
+          json.currentVersion = newVersion
+          let { canWrite } = firebaseDoc
+          if (toValue(syncWithFirebase) && canWrite) {
+            //console.log("saving to firebase", toValue(syncWithFirebase))
+            firebaseDoc?.saveData(json)
+          }
+        }
+        else{
+          let newVersion = generateId()
+          currentVersion.value = newVersion
+        }
+      },
+      { deep: true }
+    )
+    if (firebaseDoc) {
+      //console.log("setting watchers")
+      const { data } = firebaseDoc
+      dbVersion.value = data.value?.currentVersion
+      watch(
+        data,
+        (data) => {
+          const toLoad = data as HabitTrackerJSON
+          //console.log("data changed", toLoad)
+          if(toLoad) dbVersion.value = toLoad.currentVersion || ""
+          if (toValue(syncWithFirebase) && toLoad && (toLoad.currentVersion !== currentVersion.value)) {
+            //console.log("syncing from firebase", toLoad)
+            loadFromJSON(toLoad)
+          }
+        },
+        { deep: true, immediate: true }
+      )
+      watch(
+        () => toValue(syncWithFirebase),
+        (shouldSync) => {
+          const toLoad = data.value as HabitTrackerJSON
+          if(toLoad) dbVersion.value = toLoad.currentVersion || ""
+          if (shouldSync && toLoad && (toLoad.currentVersion !== currentVersion.value)) {
+            //console.log("syncing from firebase", toLoad)
+            loadFromJSON(toLoad)
+          }
+        }
+      )
+    }
+  })
+
+  let exportValue = {
     id,
     label,
 
@@ -592,6 +655,7 @@ export function useHabitTracker(initialId?: string, initialLabel?: string) : Use
     toJSON,
     loadFromJSON
   }
+  return exportValue
 }
 
 
