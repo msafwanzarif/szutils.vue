@@ -12,8 +12,9 @@ const docRegistry = new Map<
 >();
 
 export function useFirebaseDocListener<T = any>(docRef: DocumentReference<T>,  loading?: Ref<boolean>, error?: Ref<string | null>) {
-  const key = docRef.path;
-
+  const path = docRef.path;
+  const db = docRef.firestore?.app.name;
+  const key = `${db}|${path}`;
   // If already listening, reuse the entry
   if (docRegistry.has(key)) {
     const entry = docRegistry.get(key)!;
