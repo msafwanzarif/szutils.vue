@@ -28,11 +28,7 @@ const onUpdate = (data: DocumentData | null) => {
 }
 
 // Initialize the composable
-const firebaseDoc = useFirebaseDoc({
-  collectionId: 'posts',
-  documentId: 'demo-post',
-  onUpdate
-})
+const firebaseDoc = useFirebaseDoc({ onUpdate }, 'posts','demo-post')
 
 const { data, exists:dataExisted } = firebaseDoc
 
@@ -46,8 +42,7 @@ const showChangeDoc = ref(false)
 
 // Change document form
 const changeDocForm = reactive({
-  collectionId: '',
-  documentId: '',
+  documentPath: '',
   projectId: ''
 })
 
@@ -85,8 +80,7 @@ async function fetchData() {
 
 function openChangeDoc() {
   // Pre-fill form with current values
-  changeDocForm.collectionId = firebaseDoc.collection.value
-  changeDocForm.documentId = firebaseDoc.id.value
+  changeDocForm.documentPath = firebaseDoc.id.value
   changeDocForm.projectId = firebaseDoc.currentId.value || ''
   showChangeDoc.value = true
 }
@@ -95,12 +89,12 @@ function submitChangeDoc() {
   const selectedProjectId = changeDocForm.projectId === firebaseDoc.currentId.value 
     ? undefined 
     : changeDocForm.projectId || undefined
-  
-  firebaseDoc.changeDoc(
-    changeDocForm.collectionId,
-    changeDocForm.documentId,
-    selectedProjectId
-  )
+  if(selectedProjectId) {
+    firebaseDoc.changeProject(selectedProjectId)
+  }
+  let pathParts = changeDocForm.documentPath.split('/')
+  let path = pathParts.shift()
+  if(path)firebaseDoc.changeDoc(path, ...pathParts)
   showChangeDoc.value = false
 }
 </script>
@@ -116,7 +110,7 @@ function submitChangeDoc() {
         <div>{{ firebaseDoc.collection }}</div>
       </div>
       <div class="col-5">
-        <small class="text-muted">Document:</small>
+        <small class="text-muted">Path:</small>
         <div>{{ firebaseDoc.id }}</div>
       </div>
       <div class="col-2">
@@ -187,12 +181,8 @@ function submitChangeDoc() {
   >
     <template #body>
       <div class="mb-3">
-        <label class="form-label">Collection ID</label>
-        <input v-model="changeDocForm.collectionId" class="form-control" required />
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Document ID</label>
-        <input v-model="changeDocForm.documentId" class="form-control" required />
+        <label class="form-label">Document Path</label>
+        <input v-model="changeDocForm.documentPath" class="form-control" required />
       </div>
       <div class="mb-3">
         <label class="form-label">Project ID</label>

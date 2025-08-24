@@ -5,8 +5,7 @@ import { useFirebaseDocListener } from '../useFirebaseDocListener'
 
 export interface UseFirebaseDocOptions {
   projectId?: string
-  collectionId: string
-  documentId: string
+  writeDebounceMs?: number
   mergeOnSave?: boolean
   onUpdate?: (data: DocumentData | null) => void
 }
@@ -22,16 +21,17 @@ export type UseFirebaseDoc = ReturnType<typeof useFirebaseDb> & {
   canWrite: Ref<boolean>,
   saveData: (newData: DocumentData) => Promise<void>
   getData: () => Promise<DocumentData | null>
-  changeDoc: (newCollectionId: string, newDocumentId: string, newProjectId?: string) => void
+  changeDoc: (path:string,...pathSegments:string[]) => void
+  changeProject: (projectId:string) => void
 }
 
-export function useFirebaseDoc(options: UseFirebaseDocOptions): UseFirebaseDoc {
+export function useFirebaseDoc(options: UseFirebaseDocOptions,path:string,...pathSegments:string[]): UseFirebaseDoc {
   const { projectId, mergeOnSave = true, onUpdate } = options
 
   // Make collection and document IDs reactive
-  const collectionId = ref(options.collectionId)
-  const documentId = ref(options.documentId)
-  
+  const currentPath = ref(path)
+  const currentPathSegments = ref(pathSegments)
+
   // Use the base Firebase composable
   const firebase = useFirebaseDb(projectId)
   
@@ -43,11 +43,11 @@ export function useFirebaseDoc(options: UseFirebaseDocOptions): UseFirebaseDoc {
   
   // Track last write timestamp to prevent rapid saves
   let lastWriteTimestamp = 0
-  const WRITE_DEBOUNCE_MS = 500 // 5 seconds
+  const WRITE_DEBOUNCE_MS = options.writeDebounceMs || 500 // 0.5 seconds
   
   // Document reference
   const docRef = computed(() => 
-    firebase.db.value ? doc(firebase.db.value, collectionId.value, documentId.value) : null
+    firebase.db.value ? doc(firebase.db.value, currentPath.value, ...currentPathSegments.value) : null
   )
   
   // Setup real-time listener when docRef changes
@@ -135,32 +135,29 @@ export function useFirebaseDoc(options: UseFirebaseDocOptions): UseFirebaseDoc {
   /**
    * Document ID
    */
-  const id = computed(() => documentId.value)
-  
+  const id = computed(() => currentPath.value + '/' + currentPathSegments.value.join('/'))
+
   /**
    * Collection ID
    */
-  const collection = computed(() => collectionId.value)
-  
+  const collection = computed(() => currentPath.value)
+
   /**
    * Change document reference
    */
-  function changeDoc(newCollectionId: string, newDocumentId: string, newProjectId?: string) {
-    // If projectId is provided, try to switch Firebase project
-    if (newProjectId) {
-      firebase.useExisting(newProjectId)
-    }
-    
-    // Update collection and document IDs
-    collectionId.value = newCollectionId
-    documentId.value = newDocumentId
+  function changeDoc(path:string,...pathSegments:string[]) {
+
+    // Update current path and segments
+    currentPath.value = path
+    currentPathSegments.value = pathSegments
     canWrite.value = true
 
     // Reset write timestamp when changing documents
     lastWriteTimestamp = 0
+  }
 
-    // The docRef computed will automatically update and trigger the watcher
-    // which will clean up the old listener and set up a new one
+  function changeProject(projectId:string) {
+    firebase.useExisting(projectId)
   }
 
   watch(data, (newData) => {
@@ -188,6 +185,7 @@ export function useFirebaseDoc(options: UseFirebaseDocOptions): UseFirebaseDoc {
     // Document-specific methods
     saveData,
     getData,
-    changeDoc
+    changeDoc,
+    changeProject
   }
 }

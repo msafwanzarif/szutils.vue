@@ -109,7 +109,7 @@ const STORAGE_KEY = 'habit-learning'
 const started = ref(false)
 const useFirebase = ref(true)
 
-const firebaseDoc = useFirebaseDoc({collectionId:"habit-tracker", documentId:"learning-tracker"})
+const firebaseDoc = useFirebaseDoc({writeDebounceMs:500}, "habit-tracker", "learning-tracker")
 const { isSet, exists } = firebaseDoc
 const learning = useHabitTracker('learning-tracker', 'Learning Tracker', started, firebaseDoc)
 
