@@ -28,7 +28,7 @@ const onUpdate = (data: DocumentData | null) => {
 }
 
 // Initialize the composable
-const firebaseDoc = useFirebaseDoc({ onUpdate }, 'posts','demo-post')
+const firebaseDoc = useFirebaseDoc({ onUpdate }, 'posts/demo-post')
 
 const { data, exists:dataExisted } = firebaseDoc
 
@@ -80,7 +80,7 @@ async function fetchData() {
 
 function openChangeDoc() {
   // Pre-fill form with current values
-  changeDocForm.documentPath = firebaseDoc.id.value
+  changeDocForm.documentPath = firebaseDoc.path.value
   changeDocForm.projectId = firebaseDoc.currentId.value || ''
   showChangeDoc.value = true
 }
@@ -106,12 +106,8 @@ function submitChangeDoc() {
     <!-- Document Info -->
     <div class="row mb-3">
       <div class="col-5">
-        <small class="text-muted">Collection:</small>
-        <div>{{ firebaseDoc.collection }}</div>
-      </div>
-      <div class="col-5">
         <small class="text-muted">Path:</small>
-        <div>{{ firebaseDoc.id }}</div>
+        <div>{{ firebaseDoc.path }}</div>
       </div>
       <div class="col-2">
         <button class="btn btn-sm btn-outline-secondary" @click="openChangeDoc">

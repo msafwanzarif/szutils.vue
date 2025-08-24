@@ -16,8 +16,7 @@ export type UseFirebaseDoc = ReturnType<typeof useFirebaseDb> & {
   loading: Ref<boolean>
   error: Ref<string | null>
   exists: ComputedRef<boolean>
-  id: ComputedRef<string>
-  collection: ComputedRef<string>
+  path: ComputedRef<string>
   canWrite: Ref<boolean>,
   saveData: (newData: DocumentData) => Promise<void>
   getData: () => Promise<DocumentData | null>
@@ -25,11 +24,11 @@ export type UseFirebaseDoc = ReturnType<typeof useFirebaseDb> & {
   changeProject: (projectId:string) => void
 }
 
-export function useFirebaseDoc(options: UseFirebaseDocOptions,path:string,...pathSegments:string[]): UseFirebaseDoc {
+export function useFirebaseDoc(options: UseFirebaseDocOptions,inititalPath:string,...pathSegments:string[]): UseFirebaseDoc {
   const { projectId, mergeOnSave = true, onUpdate } = options
 
   // Make collection and document IDs reactive
-  const currentPath = ref(path)
+  const currentPath = ref(inititalPath)
   const currentPathSegments = ref(pathSegments)
 
   // Use the base Firebase composable
@@ -133,14 +132,9 @@ export function useFirebaseDoc(options: UseFirebaseDocOptions,path:string,...pat
   const exists = computed(() => data.value !== null)
   
   /**
-   * Document ID
+   * Document Path
    */
-  const id = computed(() => currentPath.value + '/' + currentPathSegments.value.join('/'))
-
-  /**
-   * Collection ID
-   */
-  const collection = computed(() => currentPath.value)
+  const path = computed(() => currentPath.value + (currentPathSegments.value.length ? '/' + currentPathSegments.value.join('/') : ''))
 
   /**
    * Change document reference
@@ -178,8 +172,7 @@ export function useFirebaseDoc(options: UseFirebaseDocOptions,path:string,...pat
     loading,
     error,
     exists,
-    id,
-    collection,
+    path,
     canWrite,
     
     // Document-specific methods
