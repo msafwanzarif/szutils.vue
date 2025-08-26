@@ -1,4 +1,4 @@
-import { ref, computed, MaybeRefOrGetter, watch, toValue, onMounted, Ref } from 'vue'
+import { ref, computed, MaybeRefOrGetter, watch, toValue, onMounted, Ref, nextTick } from 'vue'
 import { DateTime } from 'luxon'
 import { toDateTime, generateId, getDateKey, computeEntryStats, computeReversedRanges, findFromRange } from '../../utility'
 import type { HabitEntry, ComputedEntry, GoalRecord, OffDayRecord, GoalRange, OffDayRange, UseHabitTracker, GroupRecord, HabitTrackerJSON } from './types'
@@ -11,7 +11,7 @@ export function useHabitTracker(initialId?: string, initialLabel?: string, syncW
     const tracker = trackers.get(initialId) as UseHabitTracker
     if (tracker) {
       if (initialLabel) tracker.label.value = initialLabel
-      setWatcher(tracker.toJSON, tracker.loadFromJSON, tracker.currentVersion, tracker.dbVersion, syncWithFirebase, firebaseDoc)
+      setWatcher(tracker.toJSON, tracker.loadFromJSON,tracker.loading, tracker.currentVersion, tracker.dbVersion, syncWithFirebase, firebaseDoc)
     }
     return tracker
   }
@@ -34,6 +34,7 @@ export function useHabitTracker(initialId?: string, initialLabel?: string, syncW
 
   const currentVersion = ref<number>(0)
   const dbVersion = ref<number>(0)
+  const loading = ref<boolean>(false)
 
   const dailyGoalsRanges = computed<GoalRange[]>(() => computeReversedRanges(dailyGoals.value))
   const weeklyGoalsRanges = computed<GoalRange[]>(() => computeReversedRanges(weeklyGoals.value))
@@ -504,9 +505,10 @@ export function useHabitTracker(initialId?: string, initialLabel?: string, syncW
     }
   }
 
-  function loadFromJSON(data: HabitTrackerJSON) {
+  async function loadFromJSON(data: HabitTrackerJSON) {
     if (!data || typeof data !== 'object') return
-
+    loading.value = true
+    await nextTick()
     label.value = data.label || ''
     currentVersion.value = data.currentVersion || 0
 
@@ -531,11 +533,13 @@ export function useHabitTracker(initialId?: string, initialLabel?: string, syncW
     minDaily.value = typeof data.minDaily === 'number' ? data.minDaily : 1
     minWeekly.value = typeof data.minWeekly === 'number' ? data.minWeekly : 1
     minMonthly.value = typeof data.minMonthly === 'number' ? data.minMonthly : 1
+    await nextTick()
+    loading.value = false
   }
 
 
   onMounted(() => {
-    setWatcher(toJSON, loadFromJSON, currentVersion, dbVersion, syncWithFirebase, firebaseDoc)
+    setWatcher(toJSON, loadFromJSON, loading, currentVersion, dbVersion, syncWithFirebase, firebaseDoc)
   })
 
   let exportValue = {
@@ -543,6 +547,7 @@ export function useHabitTracker(initialId?: string, initialLabel?: string, syncW
     label,
     currentVersion,
     dbVersion,
+    loading,
     // state
     entries,
     dailyGoals,
@@ -618,10 +623,11 @@ export function useHabitTracker(initialId?: string, initialLabel?: string, syncW
   return exportValue
 }
 
-function setWatcher(toJSON: () => HabitTrackerJSON, loadFromJSON: (json: HabitTrackerJSON) => void, currentVersion: Ref<number>, dbVersion: Ref<number>, syncWithFirebase?: MaybeRefOrGetter<boolean>, firebaseDoc?: UseFirebaseDoc) {
+function setWatcher(toJSON: () => HabitTrackerJSON, loadFromJSON: (json: HabitTrackerJSON) => void, loading: Ref<boolean>, currentVersion: Ref<number>, dbVersion: Ref<number>, syncWithFirebase?: MaybeRefOrGetter<boolean>, firebaseDoc?: UseFirebaseDoc) {
   watch(
     () => toJSON(),
     (json: HabitTrackerJSON) => {
+      if (loading.value) return
       if (!currentVersion.value) return currentVersion.value = 1
       if (firebaseDoc) {
         if (dbVersion.value == currentVersion.value) return dbVersion.value = 0

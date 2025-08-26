@@ -130,6 +130,7 @@ export interface UseHabitTracker {
   id: string
   label: Ref<string | undefined>
   currentVersion: Ref<number>
+  loading: Ref<boolean>
   dbVersion: Ref<number>
   // Reactive data
   entries: Ref<HabitEntry[]>
