@@ -1,7 +1,7 @@
 import { FirebaseApp, initializeApp, getApps, getApp, FirebaseOptions } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { computed, ref, Ref, onMounted } from "vue";
+import { computed, ref, Ref, onMounted, watch } from "vue";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 
 export const firebaseAppList = ref<string[]>([]);
@@ -29,9 +29,11 @@ export function useFirebaseDb(projectId?: string) {
   const auth = computed(() => app.value ? getAuth(app.value) : null);
   const db = computed(() => app.value ? getFirestore(app.value) : null);
 
-  const user = computed(() => auth.value?.currentUser);
-  const userEmail = computed(() => user.value ? user.value.email : null);
-  const isAuthenticated = computed(() => !!user.value);
+  const updateHandle = ref(1)
+
+  const user = computed(() => updateHandle.value && auth.value?.currentUser);
+  const userEmail = computed(() => updateHandle.value && user.value ? user.value.email : null);
+  const isAuthenticated = computed(() => updateHandle.value && !!user.value);
 
   const currentId = computed(() => app.value ? app.value.options.projectId : null);
 
@@ -104,12 +106,47 @@ export function useFirebaseDb(projectId?: string) {
 
   const isSet = computed(() => !!app.value && !!db.value);
 
+  const unsubscribe = ref<() => void>();
+
   onMounted(() => {
     if (!isSet.value) {
       useExisting()
     }
+    if(auth.value) unsubscribe.value = onAuthStateChanged(auth.value, (user) => {
+      if (user) {
+        updateHandle.value++;
+      } else {
+        updateHandle.value++;
+      }
+    });
     syncFirebaseAppList()
   })
+
+  // watch(app, (newApp) => {
+  //   if (newApp) {
+  //     if(unsubscribe.value) unsubscribe.value();
+  //     if(auth.value) unsubscribe.value = onAuthStateChanged(auth.value, (user) => {
+  //       if (user) {
+  //         updateHandle.value++;
+  //       } else {
+  //         updateHandle.value++;
+  //       }
+  //     });
+  //   }
+  // });
+
+  watch(auth, (newAuth) => {
+    if (newAuth) {
+      if(unsubscribe.value) unsubscribe.value();
+      unsubscribe.value = onAuthStateChanged(newAuth, (user) => {
+        if (user) {
+          updateHandle.value++;
+        } else {
+          updateHandle.value++;
+        }
+      });
+    }
+  });
 
   return {
     app,
