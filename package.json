@@ -1,6 +1,6 @@
 {
   "name": "szutils.vue",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "main": "dist/szutils.vue.umd.js",
   "module": "dist/szutils.vue.es.js",
   "types": "dist/index.d.ts",
