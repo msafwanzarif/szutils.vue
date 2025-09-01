@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "ESNext",
-    "moduleResolution": "Node",
+    "moduleResolution": "Bundler", // or "Node16" for Node.js projects
     "strict": true,
     "declaration": true,
     "outDir": "dist",
