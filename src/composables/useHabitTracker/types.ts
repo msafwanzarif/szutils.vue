@@ -1,5 +1,14 @@
-import type { Ref, ComputedRef } from 'vue'
+import type { Ref, ComputedRef, MaybeRefOrGetter } from 'vue'
 import type { DateTime } from 'luxon'
+import { UseFirebaseDoc } from '../useFirebaseDoc'
+
+export interface HabitTrackerOptions{
+  initialLabel?: string
+  syncWithFirebase?: MaybeRefOrGetter<boolean>
+  firebaseDoc?: UseFirebaseDoc
+  allowOffline?: boolean
+  skipWatcher?: boolean
+}
 
 export interface HabitEntry {
   id: string

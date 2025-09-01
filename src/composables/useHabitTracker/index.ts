@@ -1,19 +1,22 @@
 import { ref, computed, MaybeRefOrGetter, watch, toValue, onMounted, Ref, nextTick } from 'vue'
 import { DateTime } from 'luxon'
 import { toDateTime, generateId, getDateKey, computeEntryStats, computeReversedRanges, findFromRange } from '../../utility'
-import type { HabitEntry, ComputedEntry, GoalRecord, OffDayRecord, GoalRange, OffDayRange, UseHabitTracker, GroupRecord, HabitTrackerJSON } from './types'
+import type { HabitEntry, ComputedEntry, GoalRecord, OffDayRecord, GoalRange, OffDayRange, UseHabitTracker, GroupRecord, HabitTrackerJSON, HabitTrackerOptions } from './types'
 import type { UseFirebaseDoc } from '../useFirebaseDoc'
 
 const trackers: Map<string, UseHabitTracker> = new Map()
 
-export function useHabitTracker(initialId?: string, initialLabel?: string, syncWithFirebase: MaybeRefOrGetter<boolean> = false, firebaseDoc?: UseFirebaseDoc): UseHabitTracker {
+export function useHabitTracker(initialId?:string, options: HabitTrackerOptions = {}): UseHabitTracker {
+  const { initialLabel, syncWithFirebase, firebaseDoc, allowOffline, skipWatcher } = options
+
   if (initialId && trackers.has(initialId)) {
     const tracker = trackers.get(initialId) as UseHabitTracker
     if (tracker) {
       if (initialLabel) tracker.label.value = initialLabel
-      setWatcher(tracker.toJSON, tracker.loadFromJSON,tracker.loading, tracker.currentVersion, tracker.dbVersion, syncWithFirebase, firebaseDoc)
+      if (skipWatcher) return tracker
+      setWatcher(tracker.toJSON, tracker.loadFromJSON, tracker.loading, tracker.currentVersion, tracker.dbVersion, syncWithFirebase, firebaseDoc, allowOffline)
+      return tracker
     }
-    return tracker
   }
   const id = initialId || generateId()
   const label = ref<string | undefined>(initialLabel)
@@ -539,7 +542,7 @@ export function useHabitTracker(initialId?: string, initialLabel?: string, syncW
 
 
   onMounted(() => {
-    setWatcher(toJSON, loadFromJSON, loading, currentVersion, dbVersion, syncWithFirebase, firebaseDoc)
+    setWatcher(toJSON, loadFromJSON, loading, currentVersion, dbVersion, syncWithFirebase, firebaseDoc, allowOffline)
   })
 
   let exportValue = {
@@ -623,7 +626,7 @@ export function useHabitTracker(initialId?: string, initialLabel?: string, syncW
   return exportValue
 }
 
-function setWatcher(toJSON: () => HabitTrackerJSON, loadFromJSON: (json: HabitTrackerJSON) => void, loading: Ref<boolean>, currentVersion: Ref<number>, dbVersion: Ref<number>, syncWithFirebase?: MaybeRefOrGetter<boolean>, firebaseDoc?: UseFirebaseDoc) {
+function setWatcher(toJSON: () => HabitTrackerJSON, loadFromJSON: (json: HabitTrackerJSON) => void, loading: Ref<boolean>, currentVersion: Ref<number>, dbVersion: Ref<number>, syncWithFirebase?: MaybeRefOrGetter<boolean>, firebaseDoc?: UseFirebaseDoc, allowOffline?: boolean) {
   watch(
     () => toJSON(),
     (json: HabitTrackerJSON) => {
@@ -656,7 +659,7 @@ function setWatcher(toJSON: () => HabitTrackerJSON, loadFromJSON: (json: HabitTr
       (data) => {
         const toLoad = data as HabitTrackerJSON
         if(!toValue(syncWithFirebase)) return
-        if(toLoad?.currentVersion && toLoad?.currentVersion < currentVersion.value){
+        if(allowOffline && toLoad?.currentVersion && toLoad?.currentVersion < currentVersion.value){
           console.log("saving to firebase")
           let json = toJSON()
           json.currentVersion = currentVersion.value
@@ -678,7 +681,7 @@ function setWatcher(toJSON: () => HabitTrackerJSON, loadFromJSON: (json: HabitTr
       (shouldSync) => {
         if(!shouldSync) return
         const toLoad = data.value as HabitTrackerJSON
-        if(toLoad?.currentVersion && toLoad?.currentVersion < currentVersion.value){
+        if(allowOffline && toLoad?.currentVersion && toLoad?.currentVersion < currentVersion.value){
           console.log("saving to firebase")
           let json = toJSON()
           json.currentVersion = currentVersion.value

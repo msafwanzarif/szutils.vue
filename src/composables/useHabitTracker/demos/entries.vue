@@ -102,7 +102,12 @@ const started = ref(false)
 const useFirebase = ref(true)
 const firebaseDoc = useFirebaseDoc({writeDebounceMs:500}, "habit-tracker", "learning-tracker")
 const { isSet, exists } = firebaseDoc
-const learning = useHabitTracker('learning-tracker', 'Learning Tracker', started, firebaseDoc)
+const learning = useHabitTracker('learning-tracker',{
+  initialLabel: 'Learning Tracker',
+  syncWithFirebase: started,
+  firebaseDoc,
+  allowOffline:false
+})
 
 onMounted(() => {
   const saved = localStorage.getItem(STORAGE_KEY)
