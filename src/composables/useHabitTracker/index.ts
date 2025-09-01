@@ -542,6 +542,7 @@ export function useHabitTracker(initialId?:string, options: HabitTrackerOptions 
 
 
   onMounted(() => {
+    if(skipWatcher) return
     setWatcher(toJSON, loadFromJSON, loading, currentVersion, dbVersion, syncWithFirebase, firebaseDoc, allowOffline)
   })
 
