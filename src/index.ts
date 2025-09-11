@@ -9,4 +9,4 @@ export { useTimeTickShared } from './composables/useTimeTickShared'
 export { useTimeTracker } from './composables/useTimeTracker';
 export { useFirebaseDb } from './composables/useFirebaseDb';
 export { useFirebaseDoc } from './composables/useFirebaseDoc';
-export { generateId } from './utility';
+export { generateId, getDateKey, toDateTime } from './utility';
